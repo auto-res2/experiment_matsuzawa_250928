@@ -4,21 +4,21 @@ entering extended mode
 (./paper.tex
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
+
+LaTeX Warning: Writing or overwriting file `references.bib'.
+
+
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
-(./iclr2024_conference.sty
-(/usr/share/texlive/texmf-dist/tex/latex/eso-pic/eso-pic.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
-(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def)
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx)))
-(./fancyhdr.sty) (./natbib.sty))
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/times.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1ptm.fd))
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def)))
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/hyperref.sty
 (/usr/share/texlive/texmf-dist/tex/generic/iftex/iftex.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty)
@@ -56,10 +56,6 @@ Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty)))
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)))
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
 For additional information on amsmath, use the `?' option.
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
@@ -67,6 +63,9 @@ For additional information on amsmath, use the `?' option.
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
 (/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/color.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx))
 (/usr/share/texlive/texmf-dist/tex/latex/colortbl/colortbl.sty
 (/usr/share/texlive/texmf-dist/tex/latex/tools/array.sty))
 (/usr/share/texlive/texmf-dist/tex/latex/cleveref/cleveref.sty)
@@ -95,7 +94,9 @@ f)))
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.
 tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsysprotocol.code.
-tex))
+tex)) (/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx))
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcore.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathutil.code.tex)
@@ -256,179 +257,58 @@ No file paper.aux.
 [Loading MPS to PDF converter (version 2006.09.02).]
 ) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 (/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
-(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-ptm.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg)
 Package pgfplots notification 'compat/show suggested version=true': document ha
 s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
-(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
-
-Package natbib Warning: Citation `frazier-2018-tutorial' on page 1 undefined on
- input line 66.
-
-
-Package natbib Warning: Citation `wistuba-2022-supervising' on page 1 undefined
- on input line 66.
-
-
-Package natbib Warning: Citation `jiang-2024-efficient' on page 1 undefined on 
-input line 66.
-
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd)
-Underfull \vbox (badness 1776) has occurred while \output is active [1{/var/lib
-/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-dist/fonts/
-enc/dvips/base/8r.enc}]
-
-Package natbib Warning: Citation `frazier-2018-tutorial' on page 2 undefined on
- input line 86.
-
-
-Package natbib Warning: Citation `kadra-2023-scaling' on page 2 undefined on in
-put line 86.
-
-
-Package natbib Warning: Citation `khazi-2023-deep' on page 2 undefined on input
- line 86.
-
-
-Package natbib Warning: Citation `mallik-2023-priorband' on page 2 undefined on
- input line 86.
-
-
-Package natbib Warning: Citation `hvarfner-2023-general' on page 2 undefined on
- input line 86.
-
-
-Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
- on input line 88.
-
-
-Package natbib Warning: Citation `jiang-2024-efficient' on page 2 undefined on 
-input line 88.
-
-
-Package natbib Warning: Citation `bohdal-2022-pasha' on page 2 undefined on inp
-ut line 90.
-
-
-Package natbib Warning: Citation `parkerholder-2020-provably' on page 2 undefin
-ed on input line 90.
-
-
-Package natbib Warning: Citation `wistuba-2021-few' on page 2 undefined on inpu
-t line 90.
-
-
-Package natbib Warning: Citation `khodak-2023-meta' on page 2 undefined on inpu
-t line 90.
-
-
-Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
- on input line 98.
-
-[2] [3]
-
-Package natbib Warning: Citation `parkerholder-2020-provably' on page 4 undefin
-ed on input line 148.
-
-
-LaTeX Warning: File `images/training_loss_full_experiment.pdf' not found on inp
-ut line 169.
-
-
-! Package pdftex.def Error: File `images/training_loss_full_experiment.pdf' not
- found: using draft setting.
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.169 ...images/training_loss_full_experiment.pdf}
-                                                  
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd)
-Underfull \vbox (badness 10000) has occurred while \output is active [4]
-
-LaTeX Warning: File `images/validation_rmse_full_experiment.pdf' not found on i
-nput line 175.
-
-
-! Package pdftex.def Error: File `images/validation_rmse_full_experiment.pdf' n
-ot found: using draft setting.
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.175 ...ages/validation_rmse_full_experiment.pdf}
-                                                  
-
-Underfull \vbox (badness 10000) has occurred while \output is active [5]
+Overfull \hbox (11.27962pt too wide) in paragraph at lines 145--146
+[]\T1/cmr/m/n/9 (-20) Multi-fidelity Bayesian op-ti-mi-sa-tion (MF-BO) ac-cel-e
+r-ates hyper-parameter
 No file paper.bbl.
-
-Package natbib Warning: There were undefined citations.
-
-[6] (./paper.aux)
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
-
-Package rerunfilecheck Warning: File `paper.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
- )
-(see the transcript file for additional information)</usr/share/texlive/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fo
-nts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/ty
-pe1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
-lic/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
-fonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7
-.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.
-pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/sha
-re/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/urw/times/utmr8a.pfb>
-Output written on paper.pdf (6 pages, 142856 bytes).
+[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+! pdfTeX error (font expansion): auto expansion is only possible with scalable 
+fonts.
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.159 \end{document}
+                    
+!  ==> Fatal error occurred, no output PDF file produced!
 Transcript written on paper.log.
 This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
 The top-level auxiliary file: paper.aux
 The style file: iclr2024_conference.bst
+I found no \citation commands---while reading file paper.aux
 Database file #1: references.bib
-Warning--empty journal in bohdal-2022-pasha
-Warning--empty journal in frazier-2018-tutorial
-Warning--empty journal in jiang-2024-efficient
-Warning--empty journal in kadra-2023-scaling
-Warning--empty journal in khazi-2023-deep
-Warning--empty journal in khodak-2023-meta
-Warning--empty journal in mallik-2023-priorband
-Warning--empty journal in parkerholder-2020-provably
-Warning--empty journal in wistuba-2021-few
-Warning--empty journal in wistuba-2022-supervising
-(There were 10 warnings)
+I was expecting an "="---line 73 of file references.bib
+ :   author    = {Khodak, Mikhail and Raghavan, Dilip and Sra, Suvrit},n  
+ :                                                                        booktitle = {ICML},
+I'm skipping whatever remains of this entry
+(There were 2 error messages)
 This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex)
  restricted \write18 enabled.
 entering extended mode
 (./paper.tex
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
+
+LaTeX Warning: Writing or overwriting file `references.bib'.
+
+
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
-(./iclr2024_conference.sty
-(/usr/share/texlive/texmf-dist/tex/latex/eso-pic/eso-pic.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
-(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def)
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx)))
-(./fancyhdr.sty) (./natbib.sty))
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/times.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1ptm.fd))
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def)))
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/hyperref.sty
 (/usr/share/texlive/texmf-dist/tex/generic/iftex/iftex.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty)
@@ -466,10 +346,6 @@ Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty)))
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)))
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
 For additional information on amsmath, use the `?' option.
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
@@ -477,6 +353,9 @@ For additional information on amsmath, use the `?' option.
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
 (/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/color.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx))
 (/usr/share/texlive/texmf-dist/tex/latex/colortbl/colortbl.sty
 (/usr/share/texlive/texmf-dist/tex/latex/tools/array.sty))
 (/usr/share/texlive/texmf-dist/tex/latex/cleveref/cleveref.sty)
@@ -505,7 +384,9 @@ f)))
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.
 tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsysprotocol.code.
-tex))
+tex)) (/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx))
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcore.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathutil.code.tex)
@@ -667,139 +548,29 @@ de.tex))) (/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty)
 ) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 (/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
 (./paper.out) (./paper.out)
-(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-ptm.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg)
 Package pgfplots notification 'compat/show suggested version=true': document ha
 s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
-(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
+Overfull \hbox (11.27962pt too wide) in paragraph at lines 145--146
+[]\T1/cmr/m/n/9 (-20) Multi-fidelity Bayesian op-ti-mi-sa-tion (MF-BO) ac-cel-e
+r-ates hyper-parameter
+(./paper.bbl
 
-Package natbib Warning: Citation `frazier-2018-tutorial' on page 1 undefined on
- input line 66.
+LaTeX Warning: Empty `thebibliography' environment on input line 8.
 
-
-Package natbib Warning: Citation `wistuba-2022-supervising' on page 1 undefined
- on input line 66.
-
-
-Package natbib Warning: Citation `jiang-2024-efficient' on page 1 undefined on 
-input line 66.
-
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd)
-Underfull \vbox (badness 1776) has occurred while \output is active [1{/var/lib
-/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-dist/fonts/
-enc/dvips/base/8r.enc}]
-
-Package natbib Warning: Citation `frazier-2018-tutorial' on page 2 undefined on
- input line 86.
-
-
-Package natbib Warning: Citation `kadra-2023-scaling' on page 2 undefined on in
-put line 86.
-
-
-Package natbib Warning: Citation `khazi-2023-deep' on page 2 undefined on input
- line 86.
-
-
-Package natbib Warning: Citation `mallik-2023-priorband' on page 2 undefined on
- input line 86.
-
-
-Package natbib Warning: Citation `hvarfner-2023-general' on page 2 undefined on
- input line 86.
-
-
-Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
- on input line 88.
-
-
-Package natbib Warning: Citation `jiang-2024-efficient' on page 2 undefined on 
-input line 88.
-
-
-Package natbib Warning: Citation `bohdal-2022-pasha' on page 2 undefined on inp
-ut line 90.
-
-
-Package natbib Warning: Citation `parkerholder-2020-provably' on page 2 undefin
-ed on input line 90.
-
-
-Package natbib Warning: Citation `wistuba-2021-few' on page 2 undefined on inpu
-t line 90.
-
-
-Package natbib Warning: Citation `khodak-2023-meta' on page 2 undefined on inpu
-t line 90.
-
-
-Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
- on input line 98.
-
-[2] [3]
-
-Package natbib Warning: Citation `parkerholder-2020-provably' on page 4 undefin
-ed on input line 148.
-
-
-LaTeX Warning: File `images/training_loss_full_experiment.pdf' not found on inp
-ut line 169.
-
-
-! Package pdftex.def Error: File `images/training_loss_full_experiment.pdf' not
- found: using draft setting.
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.169 ...images/training_loss_full_experiment.pdf}
-                                                  
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd)
-Underfull \vbox (badness 10000) has occurred while \output is active [4]
-
-LaTeX Warning: File `images/validation_rmse_full_experiment.pdf' not found on i
-nput line 175.
-
-
-! Package pdftex.def Error: File `images/validation_rmse_full_experiment.pdf' n
-ot found: using draft setting.
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.175 ...ages/validation_rmse_full_experiment.pdf}
-                                                  
-
-Underfull \vbox (badness 10000) has occurred while \output is active [5]
-(./paper.bbl)
-
-Package natbib Warning: There were undefined citations.
-
-[6] (./paper.aux
-
-Package natbib Warning: Citation(s) may have changed.
-(natbib)                Rerun to get citations correct.
-
-) )
-(see the transcript file for additional information)</usr/share/texlive/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fo
-nts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/ty
-pe1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
-lic/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
-fonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7
-.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.
-pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/sha
-re/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/ty
-pe1/urw/times/utmri8a.pfb>
-Output written on paper.pdf (6 pages, 156832 bytes).
+) [1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+! pdfTeX error (font expansion): auto expansion is only possible with scalable 
+fonts.
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.159 \end{document}
+                    
+!  ==> Fatal error occurred, no output PDF file produced!
 Transcript written on paper.log.
 This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex)
  restricted \write18 enabled.
@@ -807,21 +578,21 @@ entering extended mode
 (./paper.tex
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
+
+LaTeX Warning: Writing or overwriting file `references.bib'.
+
+
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
-(./iclr2024_conference.sty
-(/usr/share/texlive/texmf-dist/tex/latex/eso-pic/eso-pic.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
-(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def)
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx)))
-(./fancyhdr.sty) (./natbib.sty))
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/times.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1ptm.fd))
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def)))
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/hyperref.sty
 (/usr/share/texlive/texmf-dist/tex/generic/iftex/iftex.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty)
@@ -859,10 +630,6 @@ Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty)))
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)))
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
 For additional information on amsmath, use the `?' option.
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
@@ -870,6 +637,9 @@ For additional information on amsmath, use the `?' option.
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
 (/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/color.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx))
 (/usr/share/texlive/texmf-dist/tex/latex/colortbl/colortbl.sty
 (/usr/share/texlive/texmf-dist/tex/latex/tools/array.sty))
 (/usr/share/texlive/texmf-dist/tex/latex/cleveref/cleveref.sty)
@@ -898,7 +668,9 @@ f)))
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.
 tex)
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsysprotocol.code.
-tex))
+tex)) (/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx))
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcore.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathutil.code.tex)
@@ -1060,62 +832,27 @@ de.tex))) (/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty)
 ) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 (/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
 (./paper.out) (./paper.out)
-(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-ptm.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg)
 Package pgfplots notification 'compat/show suggested version=true': document ha
 s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
-(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd) [1{/var/lib/texmf/fo
-nts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-dist/fonts/enc/dvips
-/base/8r.enc}] [2] [3]
+Overfull \hbox (11.27962pt too wide) in paragraph at lines 145--146
+[]\T1/cmr/m/n/9 (-20) Multi-fidelity Bayesian op-ti-mi-sa-tion (MF-BO) ac-cel-e
+r-ates hyper-parameter
+(./paper.bbl
 
-LaTeX Warning: File `images/training_loss_full_experiment.pdf' not found on inp
-ut line 169.
+LaTeX Warning: Empty `thebibliography' environment on input line 8.
 
-
-! Package pdftex.def Error: File `images/training_loss_full_experiment.pdf' not
- found: using draft setting.
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.169 ...images/training_loss_full_experiment.pdf}
-                                                  
-(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd)
-Underfull \vbox (badness 10000) has occurred while \output is active [4]
-
-LaTeX Warning: File `images/validation_rmse_full_experiment.pdf' not found on i
-nput line 175.
-
-
-! Package pdftex.def Error: File `images/validation_rmse_full_experiment.pdf' n
-ot found: using draft setting.
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.175 ...ages/validation_rmse_full_experiment.pdf}
-                                                  
-
-Underfull \vbox (badness 10000) has occurred while \output is active [5]
-(./paper.bbl) [6] (./paper.aux) )
-(see the transcript file for additional information)</usr/share/texlive/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fo
-nts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/ty
-pe1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
-lic/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
-fonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7
-.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.
-pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/sha
-re/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/ty
-pe1/urw/times/utmri8a.pfb>
-Output written on paper.pdf (6 pages, 157659 bytes).
+) [1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+! pdfTeX error (font expansion): auto expansion is only possible with scalable 
+fonts.
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.159 \end{document}
+                    
+!  ==> Fatal error occurred, no output PDF file produced!
 Transcript written on paper.log.
