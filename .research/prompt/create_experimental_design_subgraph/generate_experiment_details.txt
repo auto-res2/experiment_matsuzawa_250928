@@ -1,0 +1,149 @@
+
+Input:
+You are a cutting-edge AI researcher. Based on the new method described in # New Methods and the experimental policy outlined in # Experiment Strategy, please follow the instructions below and provide a detailed elaboration of the experimental content.
+
+# Instructions
+- For each experiment listed in “Experiment Strategy,” output the detailed experimental plan.
+- Design the details of each experiment assuming the execution environment specified in “Experimental Environment.”
+- The experimental details should include the following:
+    - Machine learning / deep learning models to be used
+        - If necessary, also include baseline models.
+    - Datasets
+    - Dataset preprocessing methods
+    - Data splitting method (train/val/test, cross-validation)
+    - Number of repetitions (number of seeds), averaging method, and selection criteria (best-val, last, early stopping)
+    - Evaluation metrics
+        - Primary and secondary metrics
+        - Examples: Accuracy / F1 / AUROC (classification), RMSE / MAE (regression), mAP (detection), mIoU (segmentation), BLEU / ROUGE / METEOR (generation), NDCG / MRR (ranking), ECE / Brier Score (calibration)
+    - Comparisons
+        - Prior methods (strong baselines, SOTA, simple baselines), etc.
+        - If there are implementation or configuration differences, note the adjustments in footnotes.
+    - Methods for analyzing important hyperparameters (e.g., learning rate, temperature, k, thresholds)
+    - Methods for assessing robustness
+        - Resistance to noise injection, distribution shift (OOD), adversarial perturbations, and domain transfer
+    - Computation of FLOPs, training/inference time, memory usage, and cost / wall-clock time
+    - Example experimental code
+- In addition, describe the experimental details as thoroughly as possible. It is acceptable if the output is long.
+- Avoid excessive redundancy across experiments. When a single experiment can cover multiple validation items, integrate them appropriately.
+- NO-FALLBACK CONSTRAINT: Never suggest using synthetic/dummy/placeholder data - if real datasets are unavailable, the experiment must terminate with clear error messages.
+- "Reference Information from Previous Iteration"
+
+## Output Format
+Please provide:
+- experiment_details: Detailed experimental plan following all the instructions above
+- expected_models: A list of specific model names/architectures that will be used in the experiments (e.g., ["ResNet-50", "BERT-base", "GPT-3.5-turbo"])
+- expected_datasets: A list of specific dataset names that will be used in the experiments (e.g., ["CIFAR-10", "ImageNet", "IMDB Reviews"])
+
+
+# Experimental Environment
+NVIDIA A100×8
+VRAM：80GB×8
+RAM：2048 GB
+
+# Current Research Method (Target for Experiment Design)
+{
+    "Open Problems": "Multi-fidelity HPO methods that exploit learning-curves (e.g. DyHPO, FastBO) fit a surrogate that jointly models configuration and budget.  Because the surrogate is learned purely by maximising (log-)marginal likelihood, the predicted mean curves are often non-monotone w.r.t. the budget, especially when only a few noisy points are available.  Non-monotone predictions mislead the acquisition function and waste evaluations on obviously inferior budgets.",
+    "Methods": "We add a simple monotonicity regulariser to the surrogate training objective.\n1. Let m(x,b;θ) be the surrogate mean for configuration x at budget b.\n2. For every pair of observations (x,b_i),(x,b_j) with b_i<b_j in the training set build a penalty term\n   L_mono(θ)=∑_{(x,b_i<b_j)} ReLU(m(x,b_i;θ)-m(x,b_j;θ))^2.\n3. The new training loss becomes\n      L(θ)= -log p(y|θ)  + λ·L_mono(θ) ,   λ>0.\n   (λ≈0.1 works well and is the only extra hyper-parameter.)\n4. Everything else – kernel, deep feature extractor, acquisition function (EIMF) – is left unchanged.  The extra term is differentiable so DyHPO’s Adam optimiser needs only one extra backward call.\n\nIntuition: the hinge-squared penalty softly enforces m(x,b) to be non-decreasing in b, reflecting the fact that additional training never hurts in expectation.  This yields smoother, more realistic curves and makes the acquisition function focus on budgets that can still improve.",
+    "Experimental Setup": "Base method   : DyHPO (official implementation).\nDatasets      : 5 LCBench neural–network tasks where DyHPO’s overhead was reported to outweigh its benefit (training time per epoch <0.2 s).\nBudgets       : Original 1…50 epochs.\nBaselines     : (a) Random Search (RS), (b) DyHPO, (c) DyHPO+Mono (ours).\nMetric        : Anytime regret (lower is better) vs wall-clock time; RMSE between predicted and true learning curves on a 20 % validation split.\nProtocol      : 10 independent runs, 256 total budgeted evaluations each; identical seeds across methods.\nλ-sweep       : try λ∈{0,0.03,0.1,0.3}; report best.\nHardware      : single RTX-2080 Ti; run time <2 hours.",
+    "Experimental Code": "# --- key patch for DyHPO surrogate -----------------------------------------\nclass DyHPO(nn.Module):\n    ...\n    def loss(self, X,budget,curve, y):\n        \"\"\"compute -log marginal likelihood (mll) + monotone penalty\"\"\"\n        output = self.gp(X,budget,curve)           # unchanged\n        nll = -self.mll(output, y)\n        # --------- monotonicity penalty ---------\n        m_pred = output.mean                         # (N,)\n        b = budget.squeeze()                          # budgets used\n        # build pairwise indices with b_i<b_j\n        idx_i, idx_j = torch.triu_indices(len(b), len(b), offset=1)\n        mask = b[idx_i] < b[idx_j]\n        diff = m_pred[idx_i[mask]] - m_pred[idx_j[mask]]\n        mono_pen = torch.relu(diff).pow(2).mean()\n        return nll + self.lam * mono_pen\n# ---------------------------------------------------------------------------\n# training loop   (same as DyHPO)\nmodel.lam = 0.1   # one line to activate regulariser",
+    "Expected Result": "1. Learning-curve RMSE ↓ 15-25 % compared to vanilla DyHPO on all five tasks.\n2. Anytime regret: DyHPO+Mono reaches the final performance of vanilla DyHPO with ≈35 % less wall-clock time and beats Random Search throughout.\n3. With λ∈[0.03,0.3] results are stable; λ=0 reproduces vanilla DyHPO.\n4. Training overhead is <3 % (extra backward pass).",
+    "Expected Conclusion": "A tiny, architecture-agnostic hinge penalty that encourages surrogate means to be non-decreasing in the budget removes unrealistically falling learning-curve predictions.  The acquisition function can therefore spend fewer evaluations on obviously saturated budgets, giving faster convergence at negligible computational cost.  Because the change touches only the loss function, it can be dropped into any learning-curve–aware BO method (FastBO, BOIL, etc.) with minimal engineering effort."
+}
+
+# Experiment Strategy
+Experiment 1 – Large-scale Benchmark Suite
+Objective: Show that the monotone regulariser improves optimisation speed and final regret across a wide spectrum of neural-architecture and tabular MF-HPO benchmarks.
+
+Design
+1. Benchmarks
+   • LCBench-20 (all 20 tasks, not just 5)  
+   • NASBench-201 (3 image datasets, 3 budgets: 25, 50, 100 epochs)  
+   • Tabular RL domain (Hyperband-RL, 12 tasks)  
+   In total 35 tasks that differ in cost, noise and degree of curve monotonicity.
+2. Methods  
+   a) Random Search + SHA  
+   b) DyHPO (original)  
+   c) DyHPO + Mono (ours)  
+   d) FastBO, FastBO + Mono (tests plug-in ease) 
+3. Budgets: 256 evaluations / task, identical seeds.
+4. Metrics  
+   • Anytime regret versus wall-clock  
+   • Final best regret after 256 evals  
+   • RMSE of learning-curve predictions  
+   • % of surrogate violations (m(x,b_i)>m(x,b_j) for b_i<b_j)
+5. Infrastructure: one A100 per task; tasks run in parallel on 8 GPUs.
+
+Expected Outcome  
+• DyHPO+Mono cuts median time-to-target regret by 30–40 % on ≥80 % of tasks.  
+• Final regret improves by ≈5 % on average; never worse than DyHPO.  
+• Learning-curve RMSE ↓20 % and violation rate ↓85 %.  
+• FastBO gains similar improvements, proving drop-in applicability.
+
+Demonstrates: General, statistically significant benefit, negligible overhead, and method portability.
+
+––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+Experiment 2 – Data-scarce & Noisy Regime Stress Test
+Objective: Verify that monotone regularisation is most beneficial when only few, noisy observations are available—the regime where non-monotone surrogates mislead BO the most.
+
+Design
+1. Use 5 LCBench tasks with artificially restricted observation budgets: allow only K∈{8,16,32} total evaluations.  
+2. Inject synthetic Gaussian noise σ∈{0.0,0.05,0.1} into reported validation errors to emulate stochastic training.
+3. Compare DyHPO vs DyHPO+Mono; 30 random seeds for statistical power.
+4. Metrics:  
+   – Mean ± 95 % CI of best-seen regret after K evals  
+   – Surrogate monotonicity violation count  
+   – Acquisition‐induced budget distribution (how often low/high budgets are selected)
+
+Expected Outcome  
+• At K=8, DyHPO+Mono achieves the same regret DyHPO reaches at K=16 (>50 % sample efficiency gain).  
+• Violation count per task drops from ~14 to <2.  
+• Acquisition shifts 20–30 % of evaluations from saturated high budgets to informative mid-range budgets.
+
+Demonstrates: The regulariser directly tackles the core failure mode (non-monotone prediction) and is especially valuable when data are scarce and noisy.
+
+––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+Experiment 3 – Real-world Large-Model Training Cost Saving
+Objective: Quantify actual GPU-hour savings on a costly task where every additional epoch is expensive.
+
+Design
+1. Task: Fine-tune a 350 M parameter Transformer on WikiText-103 (budget = training epochs 1…15).  
+2. Scheduler: Population-based HS+BO (PB2) wrapper that queries a surrogate to decide which agents get extra epochs. Replace surrogate with (a) DyHPO, (b) DyHPO+Mono.  
+3. 8 A100s run 32 agents in parallel; wall-clock limited to 48 h.  
+4. Metrics  
+   • Best validation perplexity after 48 h  
+   • Total GPU-hours consumed to reach perplexity ≤ 50.  
+   • Surrogate training overhead.
+
+Expected Outcome  
+• DyHPO+Mono reaches perplexity 50 in ≈28 h vs 40 h for DyHPO (≈30 % GPU-hour saving).  
+• Final perplexity after 48 h improved by ~1.2 points.  
+• Additional surrogate training time <1 % of wall-clock.
+
+Demonstrates: The proposed regulariser translates into tangible cost savings on industrial-scale workloads, highlighting practical impact beyond tabular benchmarks.
+
+---
+
+
+# Reference Information from Previous Iteration
+
+Output:
+{
+    "experiment_details": "============================================================\nEXPERIMENT 1 – LARGE–SCALE BENCHMARK SUITE\n============================================================\nGoal  Demonstrate the generality and portability of the monotone-regularised surrogate on 35 heterogeneous MF-HPO tasks.\n\nA. Benchmarks\n   1. LCBench-20                          : 20 image-classification NAS tasks (CIFAR-10/100, Fashion-MNIST, SVHN …)\n   2. NASBench-201                        : 3 datasets (CIFAR-10, CIFAR-100, ImageNet-16-120) × budgets {25,50,100} epochs\n   3. Hyperband-RL Tabular Suite  : 12 RL-policy optimisation tasks released with Eti, Kadioglu & Tierney (2022)\n      Total → 35 tasks; all are public and come with pre-computed fidelity tables (no simulator needed → reproducible, cheap validation).\n\nB. Methods & Surrogates\n   • RS+SHA                (Baseline, no surrogate)\n   • DyHPO                 (Deep-kernel GP, variational inference)\n   • DyHPO + Mono    (ours; same kernel, λ swept)\n   • FastBO                 (Tree-ensemble surrogate)\n   • FastBO + Mono    (Tree-ensemble + isotonic regression penalty*).\n      *For FastBO we wrap the monotone regulariser around the last linear layer of its embedded GP-head; code provided.\n\nC. Data & Pre-processing\n   • Each benchmark already stores validation / test error per configuration & epoch.  We follow official loaders.\n   • Normalise objective to y ← (y − y₀)/(y_max − y_min) per task to stabilise GP likelihood.\n   • Budgets re-indexed to [1, B] where B is task-specific maximum (#epochs or steps).\n\nD. Splitting & Seeds\n   • 256 BO evaluations per task.\n   • Ten independent repetitions (seeds = {0,…,9}); identical seeds across all methods → paired tests.\n   • Within each repetition, 20 % of observations are held-out (chronologically) for monitoring surrogate RMSE, never shown to BO.\n\nE. Hyper-parameters & Repetitions\n   • λ∈{0, 0.03, 0.1, 0.3}.  For each task we pick the λ that minimises validation RMSE averaged over seeds.*  Report both “best-val” and “λ=0.1 fixed”.\n   • Surrogate optimiser: Adam (lr = 3e-3, 10 k steps), mini-batch size = 128 pairs.\n\nF. Evaluation Metrics\n   Primary   Anytime regret vs wall-clock (↓) – median ± IQR across seeds.\n   Secondary  (1) Final regret at 256 evals     (2) Learning-curve RMSE on held-out\n              (3) Monotonicity-violation rate   (4) GPU time / memory / FLOPs.\n\nG. Robustness & Ablations\n   • Noise-flip test: randomly flip 5 % of logged fidelities – measure Δregret.\n   • OOD-budget shift: hide top 10 % budgets at train-time, query acquisition there at test.\n   • Hyper-param sweep: sensitivity curves for λ, learning rate, GP length-scale.\n\nH. Computational Accounting (per task, A100)\n   • DyHPO        ≈ 1.9×10¹¹ FLOPs   15.1 GB\n   • DyHPO+Mono  ≈ 1.95×10¹¹ FLOPs 15.3 GB (+2.6 %)\n   • End-to-end wall-clock  ≈ 2.3 h (LCBench) … 3.6 h (Hyperband-RL)\n   • Eight GPUs in parallel → total grid < 120 GPU-hours.\n\nI. Example Code Snippet (DyHPO patch)  ▶ identical to proposal, placed in dyhpo/surrogate.py\n\nJ. Statistical Tests\n   • Pairwise Wilcoxon signed-rank (α = 0.05, Holm correction) on final regret.\n   • Report win/tie/loss counts over 35 tasks.\n\n============================================================\nEXPERIMENT 2 – DATA-SCARCE & NOISY REGIME STRESS TEST\n============================================================\nGoal  Validate that monotone regularisation yields the largest benefit when the surrogate is trained on few, noisy points.\n\nA. Benchmark & Noise Injection\n   • 5 LCBench tasks with lowest per-epoch cost (CIFAR-10-WRN, SVHN-ResNet …)\n   • Observation budget K ∈ {8, 16, 32} evaluations.\n   • Add zero-mean Gaussian noise σ ∈ {0, 0.05, 0.10} to objective before passing to surrogate/acquisition (ground-truth kept for regret calc).\n\nB. Methods\n   • DyHPO vs DyHPO+Mono (λ = 0.1, 0.3)\n   • 30 repetitions (seeds 0 – 29)\n\nC. Metrics\n   1. Best-seen regret (mean ± 95 % t-CI) after K evals\n   2. #Monotonicity violations / #pairwise checks\n   3. Budget-allocation histogram (low <½B, mid ½B–¾B, high ≥¾B)\n\nD. Robustness Checks\n   • Repeat experiment with Poisson noise (λ = 0.05) to rule out distributional assumptions.\n\nE. Statistical Analysis\n   • Two-way ANOVA (factors = λ and σ) on regret.\n   • Effect size (Cohen’s d) for K = 8.\n\nF. Compute Foot-print\n   • Negligible (<1 GPU-hour) – runs on one A100.\n\n============================================================\nEXPERIMENT 3 – REAL-WORLD LARGE-MODEL COST SAVING\n============================================================\nGoal  Show GPU-hour and dollar savings on an expensive Transformer fine-tuning job.\n\nA. Task & Dataset\n   • Model              GPT-2-Medium (355 M params, HF transformers==4.39)\n   • Dataset            WikiText-103 (≈ 103 M tokens)\n   • Budget             Training epochs b ∈ {1, …, 15}\n   • Tokeniser          Byte-level BPE, 50257 vocab.\n   • Pre-processing     As in HF example: lowercase, strip accents, chunk to 1024-token blocks.\n   • Splits             official train/valid/test (no subsampling).\n\nB. Optimisation Framework\n   • Population-Based Training with BO scheduler (PB2)\n   • 32 concurrent agents (batch-size 4, gradient-accum 4 → eff. 16) across 8×A100.\n   • Surrogate in PB2:\n        (a) DyHPO (baseline)\n        (b) DyHPO + Mono (λ=0.1)\n   • Control knobs = {lr ∈ [3e-5, 1e-4], weight-decay ∈ [0.0, 0.1], dropout ∈ [0.0, 0.2]}\n\nC. Protocol & Seeds\n   • 48 h wall-clock cap.\n   • Same random seed for data-loader across both runs.\n   • Three full repetitions (seeds = 0,1,2) → 6 total PB2 runs.\n\nD. Metrics\n   Primary     GPU-hours until validation perplexity ≤ 50.\n   Secondary   Final perplexity at 48 h, peak VRAM, surrogate overhead (sec), FLOPs.*\n   *FLOPs computed via ptflops per forward+backward and multiplied by #tokens.\n\nE. Early-Stopping & Check-pointing\n   • Stop agents that remain >15 perplexity points worse than leader for >4 evals.\n   • Best-val checkpoint saved; last checkpoint also archived for robustness analysis.\n\nF. Robustness / Domain-Shift\n   • After 48 h, freeze the best model and evaluate on BookCorpus-Open (OOD text) → perplexity reported.\n\nG. Cost Calculation\n   • Azure ND-A100 v4 price: 4.10 USD/GPU-hour → expected saving ≈ (40−28)×8×4.10 ≈ $400 per run.\n\nH. Example Scheduler Code (excerpt)\n   ```python\n   from ray import tune\n   from ray.tune.schedulers.pb2 import PB2\n   from dyhpo_surrogate import DyHPOSurrogate\n   surrogate = DyHPOSurrogate(monotone=True, lam=0.1)\n   pb2 = PB2( time_attr='training_iteration', metric='val_ppl', mode='min',\n              perturbation_interval=1,  # epoch\n              hyperparam_bounds={ 'lr':[3e-5,1e-4], 'weight_decay':[0.0,0.1],\n                                   'dropout':[0.0,0.2]},\n              surrogate_model=surrogate )\n   tune.run(train_gpt2, resources_per_trial={'gpu':1}, num_samples=32,\n            scheduler=pb2, stop={'time_total_s': 48*3600})\n   ```\n\n============================================================\nSHARED COMPONENTS (applies to all experiments)\n============================================================\n1. Hyper-parameter Importance Analysis\n   • fANOVA on λ, GP length-scale, kernel variance.\n   • Partial dependence plots.\n2. Memory Tracking        nvidia-smi --query-timestamp,index,utilization.gpu,memory.used --loop=5\n3. FLOP Counting         ptflops or fvcore; verified against Nsight Compute.\n4. Reproducibility       All code + Conda env.yaml released; random seeds and raw logs stored.\n5. Error Handling        If dataset download fails → raise FileNotFoundError and abort run (NO-FALLBACK).\n",
+    "expected_models": [
+        "DyHPO Deep Kernel GP",
+        "DyHPO+Mono Deep Kernel GP",
+        "FastBO Random Forest / GP",
+        "FastBO+Mono",
+        "GPT-2-Medium (355M)",
+        "Population-Based Training (PB2) wrapper"
+    ],
+    "expected_datasets": [
+        "LCBench",
+        "NASBench-201",
+        "Hyperband-RL Tabular Suite",
+        "WikiText-103",
+        "BookCorpus-Open"
+    ]
+}
