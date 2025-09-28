@@ -580,6 +580,68 @@
       }
     }
   ],
+  "reference_research_study_list": [
+    {
+      "title": "BoTorch: Programmable Bayesian Optimization in PyTorch"
+    },
+    {
+      "title": "Dynamic programming and optimal control, volume 1"
+    },
+    {
+      "title": "Neuro-dynamic programming"
+    },
+    {
+      "title": "Parallelizing exploration-exploitation tradeoffs in Gaussian process bandit optimization"
+    },
+    {
+      "title": "Efﬁcient benchmarking of hyperpa- rameter optimizers via surrogates"
+    },
+    {
+      "title": "Efﬁcient bench- marking of algorithm conﬁgurators via model-based surrogates"
+    },
+    {
+      "title": "A tutorial on bayesian optimization"
+    },
+    {
+      "title": "Gpytorch: Black- box matrix-matrix gaussian process inference with gpu acceleration"
+    },
+    {
+      "title": "Towards Gaussian process-based optimization with ﬁnite time horizon"
+    },
+    {
+      "title": "Kriging is well-suited to parallelize optimization"
+    },
+    {
+      "title": "GLASSES: Relieving the myopia of Bayesian optimisation."
+    },
+    {
+      "title": "Constrained Bayesian optimization for automatic chemical design using variational autoencoders"
+    },
+    {
+      "title": "Efﬁcient nonmyopic active search"
+    },
+    {
+      "title": "Efﬁcient nonmyopic batch active search"
+    },
+    {
+      "title": "BINOCULARS for Efﬁcient, Nonmyopic Sequential Experimental Design"
+    },
+    {
+      "title": "Neural architecture search with bayesian optimisation and optimal transport"
+    },
+    {
+      "title": "Auto-Encoding Variational Bayes"
+    },
+    {
+      "title": "Bayesian optimization with a ﬁnite budget: an approximate dynamic programming approach"
+    },
+    {
+      "title": "Automating Bayesian optimization with Bayesian optimization"
+    },
+    {
+      "title": "On Bayesian methods for seeking the extremum"
+    }
+  ],
   "new_method": {
     "method": "{\n    \"Open Problems\": \"Multi-fidelity HPO methods that exploit learning-curves (e.g. DyHPO, FastBO) fit a surrogate that jointly models configuration and budget.  Because the surrogate is learned purely by maximising (log-)marginal likelihood, the predicted mean curves are often non-monotone w.r.t. the budget, especially when only a few noisy points are available.  Non-monotone predictions mislead the acquisition function and waste evaluations on obviously inferior budgets.\",\n    \"Methods\": \"We add a simple monotonicity regulariser to the surrogate training objective.\\n1. Let m(x,b;θ) be the surrogate mean for configuration x at budget b.\\n2. For every pair of observations (x,b_i),(x,b_j) with b_i<b_j in the training set build a penalty term\\n   L_mono(θ)=∑_{(x,b_i<b_j)} ReLU(m(x,b_i;θ)-m(x,b_j;θ))^2.\\n3. The new training loss becomes\\n      L(θ)= -log p(y|θ)  + λ·L_mono(θ) ,   λ>0.\\n   (λ≈0.1 works well and is the only extra hyper-parameter.)\\n4. Everything else – kernel, deep feature extractor, acquisition function (EIMF) – is left unchanged.  The extra term is differentiable so DyHPO’s Adam optimiser needs only one extra backward call.\\n\\nIntuition: the hinge-squared penalty softly enforces m(x,b) to be non-decreasing in b, reflecting the fact that additional training never hurts in expectation.  This yields smoother, more realistic curves and makes the acquisition function focus on budgets that can still improve.\",\n    \"Experimental Setup\": \"Base method   : DyHPO (official implementation).\\nDatasets      : 5 LCBench neural–network tasks where DyHPO’s overhead was reported to outweigh its benefit (training time per epoch <0.2 s).\\nBudgets       : Original 1…50 epochs.\\nBaselines     : (a) Random Search (RS), (b) DyHPO, (c) DyHPO+Mono (ours).\\nMetric        : Anytime regret (lower is better) vs wall-clock time; RMSE between predicted and true learning curves on a 20 % validation split.\\nProtocol      : 10 independent runs, 256 total budgeted evaluations each; identical seeds across methods.\\nλ-sweep       : try λ∈{0,0.03,0.1,0.3}; report best.\\nHardware      : single RTX-2080 Ti; run time <2 hours.\",\n    \"Experimental Code\": \"# --- key patch for DyHPO surrogate -----------------------------------------\\nclass DyHPO(nn.Module):\\n    ...\\n    def loss(self, X,budget,curve, y):\\n        \\\"\\\"\\\"compute -log marginal likelihood (mll) + monotone penalty\\\"\\\"\\\"\\n        output = self.gp(X,budget,curve)           # unchanged\\n        nll = -self.mll(output, y)\\n        # --------- monotonicity penalty ---------\\n        m_pred = output.mean                         # (N,)\\n        b = budget.squeeze()                          # budgets used\\n        # build pairwise indices with b_i<b_j\\n        idx_i, idx_j = torch.triu_indices(len(b), len(b), offset=1)\\n        mask = b[idx_i] < b[idx_j]\\n        diff = m_pred[idx_i[mask]] - m_pred[idx_j[mask]]\\n        mono_pen = torch.relu(diff).pow(2).mean()\\n        return nll + self.lam * mono_pen\\n# ---------------------------------------------------------------------------\\n# training loop   (same as DyHPO)\\nmodel.lam = 0.1   # one line to activate regulariser\",\n    \"Expected Result\": \"1. Learning-curve RMSE ↓ 15-25 % compared to vanilla DyHPO on all five tasks.\\n2. Anytime regret: DyHPO+Mono reaches the final performance of vanilla DyHPO with ≈35 % less wall-clock time and beats Random Search throughout.\\n3. With λ∈[0.03,0.3] results are stable; λ=0 reproduces vanilla DyHPO.\\n4. Training overhead is <3 % (extra backward pass).\",\n    \"Expected Conclusion\": \"A tiny, architecture-agnostic hinge penalty that encourages surrogate means to be non-decreasing in the budget removes unrealistically falling learning-curve predictions.  The acquisition function can therefore spend fewer evaluations on obviously saturated budgets, giving faster convergence at negligible computational cost.  Because the change touches only the loss function, it can be dropped into any learning-curve–aware BO method (FastBO, BOIL, etc.) with minimal engineering effort.\"\n}",
     "experimental_design": {
