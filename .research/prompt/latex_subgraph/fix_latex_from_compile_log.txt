@@ -1,0 +1,1557 @@
+
+Input:
+You are highly proficient in writing LaTeX. Based on the following instructions, please revise the LaTeX content accordingly.
+
+# Instructions:
+- The section labeled "# LaTeX Text" contains the LaTeX content that was processed.
+- The section labeled "# Error/Log" contains error messages or validation results from LaTeX processing (could be from compilation errors, chktex validation warnings, or other LaTeX tools).
+- Carefully read the error messages/logs and identify the necessary corrections in the LaTeX content:
+  - For compilation errors: Fix syntax errors, missing packages, undefined commands, etc.
+  - For chktex warnings: Address LaTeX style issues, improper formatting, spacing problems, etc.
+  - For combined logs: Address all issues mentioned across different validation stages.
+- Please output the entire corrected LaTeX content after applying all necessary fixes.
+
+# LaTeX Text:
+\PassOptionsToPackage{numbers}{natbib}
+\documentclass{article} % For LaTeX2e
+\usepackage{iclr2024_conference,times}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{titletoc}
+
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{color}
+\usepackage{colortbl}
+\usepackage{cleveref}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{float}
+\usepackage{array}
+\usepackage{tabularx}
+\pgfplotsset{compat=newest}
+
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\graphicspath{{../}} % To reference your generated figures, see below.
+
+\title{Monotone Surrogates Make Multi-Fidelity Bayesian Optimisation Faster and Safer}
+
+\author{AIRAS}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Multi-fidelity Bayesian optimisation (MF-BO) accelerates hyper-parameter search by modelling the validation loss that a configuration x will reach after training for a budget b. Popular approaches such as DyHPO and FastBO fit a flexible Gaussian-process or tree surrogate by maximising the log-marginal likelihood of observed learning curves. When only a handful of noisy points are available this objective ignores the simple prior that, in expectation, additional training cannot increase the loss. The resulting non-monotone mean curves mislead the acquisition function toward obviously saturated budgets and waste compute. We introduce a one-line, architecture-agnostic remedy: a hinge-squared penalty on every pair of observations of the same configuration that violates monotonicity. The penalty is fully differentiable, weighted by a single hyper-parameter \(\lambda\), and adds just one extra backward pass to the original optimiser. Plugging the regulariser into DyHPO and FastBO halves the frequency of monotonicity violations, reduces held-out learning-curve RMSE by 15-25 \%, and reaches the final regret of the unregularised baseline 35 \% sooner - all at below three percent computational overhead. Extensive experiments on thirty-five public MF-HPO benchmarks, a controlled noise stress test, and an expensive GPT-2 fine-tuning job confirm that the method is both effective and robust.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+Hyper-parameter optimisation (HPO) is indispensable for modern machine learning, yet exhaustive search rapidly becomes infeasible as models grow in size, data volume, and training cost. Multi-fidelity Bayesian optimisation (MF-BO) mitigates this burden by evaluating low-cost proxies - short training runs or smaller data subsets - to guide exploration of the full-budget objective \cite{frazier-2018-tutorial}. Current state-of-the-art MF-BO methods such as DyHPO \cite{wistuba-2022-supervising} and FastBO \cite{jiang-2024-efficient} learn a surrogate that jointly conditions on a candidate configuration x and the training budget b. An acquisition function then decides whether to continue training an existing model or to start a new one.
+
+Despite impressive empirical gains, existing learning-curve surrogates share a weakness: the predictive mean is learned solely from data likelihood. With few and noisy observations nothing prevents the fitted curve from decreasing and later rising with increasing budget, contradicting the well-known prior that more training should not harm expected validation loss. Such artefacts are not benign. Acquisition functions typically favour the budget with the steepest predicted descent; a spurious uptick therefore draws evaluations toward budgets that are already saturated.
+
+Classical approaches to enforce monotonicity - projection onto inequality-constrained Gaussian-processes or virtual derivative observations - complicate inference and scale poorly. Isotonic regression only handles one-dimensional inputs. What is needed is a cheap, differentiable, and architecture-agnostic mechanism that biases any surrogate toward monotone means without altering its kernel, likelihood, or acquisition logic.
+
+We provide exactly such a mechanism: augment the training loss with a hinge-squared monotonicity penalty. Whenever two observations share the same configuration and \(b_i<b_j\), the squared positive part of \(m(x,b_i)-m(x,b_j)\) is added to the loss. A single hyper-parameter \(\lambda\) trades off data fit and monotone bias, and the patch costs a handful of lines of code.
+
+\subsection{Contributions}
+\begin{itemize}
+  \item \textbf{Universal regulariser}: A universal, one-line monotonicity regulariser that drops into any learning-curve surrogate; demonstrated on DyHPO and FastBO.
+  \item \textbf{Convex upper bound}: A convex-analysis interpretation showing that the hinge-squared term is the tightest convex upper bound on the expected violation probability.
+  \item \textbf{Empirical gains}: Extensive empirical evidence across thirty-five public MF-HPO tasks, a noise stress test, and a GPT-2 fine-tuning workload, yielding 15-25 \% lower surrogate RMSE and up to 35 \% wall-clock savings.
+  \item \textbf{Ablations and overhead}: Ablations over \(\lambda\), noise levels, budget extrapolation, and computational overhead (\(<3\ \%\)).
+\end{itemize}
+
+The remainder of the paper reviews related work, summarises the MF-BO background, details the proposed regulariser, describes the experimental protocol, presents results, discusses limitations, and concludes with avenues for future research.
+
+\section{Related Work}
+\label{sec:related}
+Monotone Gaussian-process models date back to constrained kriging and virtual derivative observations, but the required projections or augmented likelihoods are computationally heavy and hard to integrate into modern deep-kernel surrogates \cite{frazier-2018-tutorial}. Deep Power Laws encode a parametric decreasing curve, forcing a custom kernel and sacrificing flexibility \cite{kadra-2023-scaling}. Deep Ranking Ensembles preserve the rank order of configurations but do not exploit budget structure \cite{khazi-2023-deep}. PriorBand and ColaBO accelerate optimisation by injecting user beliefs about promising regions yet leave learning-curve shape unconstrained \cite{mallik-2023-priorband,hvarfner-2023-general}.
+
+DyHPO introduced a deep-kernel GP tailored to learning curves and an entropy-based acquisition across budgets \cite{wistuba-2022-supervising}, while FastBO couples a tree-ensemble surrogate with an adaptive fidelity selector \cite{jiang-2024-efficient}. Both achieve state-of-the-art regret but learn unconstrained means and therefore produce non-monotone artefacts. Our regulariser complements these methods by adding a mild inductive bias without touching their kernels or acquisition rules.
+
+Scheduler-based alternatives such as PASHA \cite{bohdal-2022-pasha} and PB2 \cite{parkerholder-2020-provably} rely on successive-halving or population-bandit heuristics rather than full surrogates; nonetheless they still benefit from accurate learning-curve prediction when a surrogate guides their pruning or resampling. Transfer-learning surrogates for few-shot HPO \cite{wistuba-2021-few} and meta-bandit algorithms \cite{khodak-2023-meta} share information across tasks but do not address within-task monotonicity, making our approach complementary.
+
+To our knowledge no previous work offers a generic, low-cost remedy for monotonicity violations in learning-curve surrogates. This paper fills that gap.
+
+\section{Background}
+\label{sec:background}
+Problem setting. For a configuration \(x\) and a training budget \(b\), let \(y(x,b)\) denote the observed validation loss. We assume that for every \(x\) the expected learning curve \(\mu(x,b)=\mathbb{E}[y(x,b)]\) is non-increasing in \(b\) and that observations are perturbed by independent Gaussian noise with variance \(\sigma^{2}\). The optimisation goal is to find \(x^{\ast}\) minimising \(y(x^{\ast},B_{\max})\) while querying only a limited number of \((x,b)\) pairs. A surrogate model \(m(x,b;\theta)\) provides a predictive mean and variance used by an acquisition function \(\alpha(x,b)\) during optimisation.
+
+DyHPO surrogate. DyHPO employs a deep-kernel Gaussian process: an MLP \(\phi\) embeds \((x,b)\) into a latent space where a Mat\'ern kernel operates \cite{wistuba-2022-supervising}. The parameters \(\theta\) include GP hyper-parameters and network weights and are learned by minimising the negative log-marginal likelihood \(L_{\mathrm{nll}}(\theta)\).
+
+Monotonicity prior. Domain knowledge states that \(\mu(x,b_i)\geq\mu(x,b_j)\) whenever \(b_i<b_j\). Enforcing this strictly across all pairs is computationally prohibitive, motivating a soft penalty that discourages but does not forbid violations and thereby preserves the surrogates flexibility to follow noisy data.
+
+\section{Method}
+\label{sec:method}
+\subsection{Regularised objective}
+Let \(D=\{(x_k,b_k,y_k)\}_{k=1}^{N}\) be the data. Consider all index pairs \((i,j)\) such that \(x_i=x_j\) and \(b_i<b_j\). Define the individual violation
+\(v_{ij}(\theta)=\max\{0,\ m(x_i,b_i;\theta)-m(x_j,b_j;\theta)\}^{2}\).
+The monotonicity loss is \(L_{\mathrm{mono}}(\theta)=\operatorname{mean}_{(i,j)} v_{ij}(\theta)\). The full training objective becomes
+\(L(\theta)=L_{\mathrm{nll}}(\theta)+\lambda\,L_{\mathrm{mono}}(\theta)\).
+
+\subsection{Efficient optimisation and cost}
+Gradients of \(L\) are obtained via automatic differentiation; therefore existing optimiser code remains unchanged. Pairwise enumeration is quadratic in the number of budgets per configuration but inexpensive in practice because learning curves seldom exceed fifty points. Across all benchmarks the extra backward pass increases floating-point operations by less than three percent.
+
+\subsection{Implementation notes}
+After computing the surrogate mean for a mini-batch, build pairwise indices where budgets differ within the same configuration, apply the hinge-squared penalty, and add \(\lambda\) times its mean to the negative log-likelihood. This modification applies unchanged to DyHPOs deep-kernel GP and to FastBOs embedded GP head.
+
+\subsection{Choosing the regularisation weight}
+A short sweep over \(\{0,\ 0.03,\ 0.1,\ 0.3\}\) is run per task. A rough guideline \(\lambda\approx \sigma/\Delta\), where \(\Delta\) is the typical loss drop between adjacent budgets, balances data fit and monotone bias; empirically \(\lambda=0.1\) works well across domains.
+
+\subsection{Acquisition functions}
+DyHPOs Expected Improvement over Minimal Fidelity (EIMF) and FastBOs saturation-aware selector are used unchanged. Because the surrogate now predicts smoother, non-increasing curves, the acquisition function focuses on budgets that can still improve and avoids wasted evaluations.
+
+\begin{algorithm}[t]
+\caption{Training a surrogate with hinge-squared monotonicity regularisation}
+\begin{algorithmic}[1]
+\State \textbf{Input:} data \(D=\{(x_k,b_k,y_k)\}_{k=1}^{N}\), weight \(\lambda\), parameters \(\theta\), learning rate \(\eta\)
+\Repeat
+  \State Compute negative log-marginal likelihood \(L_{\mathrm{nll}}(\theta)\)
+  \State Build pair set \(\mathcal{P}=\{(i,j): x_i=x_j,\ b_i<b_j\}\)
+  \State For all \((i,j)\in\mathcal{P}\): \(v_{ij} \leftarrow \max\{0,\ m(x_i,b_i;\theta)-m(x_j,b_j;\theta)\}^{2}\)
+  \State \(L_{\mathrm{mono}} \leftarrow \operatorname{mean}_{(i,j)\in\mathcal{P}} v_{ij}\)
+  \State Total loss: \(L \leftarrow L_{\mathrm{nll}} + \lambda\,L_{\mathrm{mono}}\)
+  \State Update parameters: \(\theta \leftarrow \theta - \eta\,\nabla_{\theta} L\)
+\Until{convergence}
+\end{algorithmic}
+\end{algorithm}
+
+\section{Experimental Setup}
+\label{sec:experimental}
+\subsection{Large benchmark suite}
+We combine LCBench-20 (image NAS), NASBench-201 (three datasets \(\times\) three budgets), and twelve Hyperband-RL tabular tasks, yielding thirty-five MF-HPO problems with pre-computed fidelity tables. Each optimiser receives 256 evaluations, repeated for ten random seeds. Metrics: anytime regret versus wall-clock time, surrogate RMSE on a 20 \% chronological hold-out, and monotonicity-violation rate. Baselines: Random Search with SHA, DyHPO, FastBO, and their monotone variants. Results are reported for (i) task-specific best \(\lambda\) and (ii) fixed \(\lambda=0.1\).
+
+\subsection{Data-scarce stress test}
+Five low-cost LCBench tasks are evaluated with \(K\in\{8,16,32\}\) evaluations and injected Gaussian noise \(\sigma\in\{0,\ 0.05,\ 0.1\}\). We compare DyHPO and DyHPO+Mono (\(\lambda\in\{0.1,\ 0.3\}\)) across thirty seeds. Metrics: best-seen regret, violation rate, and budget-allocation histogram. Significance is assessed by two-way ANOVA and Cohens \(d\).
+
+\subsection{GPT-2 fine-tuning}
+The surrogate is embedded into PB2 \cite{parkerholder-2020-provably} for GPT-2-Medium fine-tuned on WikiText-103. Thirty-two concurrent agents run on eight A100 GPUs for forty-eight hours. Primary metric: GPU-hours until validation perplexity \(\leq 50\). Secondary metrics: final perplexity, peak VRAM, and surrogate overhead.
+
+\subsection{Shared implementation and evaluation protocols}
+All surrogates use Adam (learning rate \(3\times 10^{-3}\), 10\,000 steps, mini-batch size 128). Hardware for the benchmark suite is a single RTX-2080 Ti; GPT-2 uses the training cluster but logs surrogate overhead. Statistical significance on the suite is evaluated with Wilcoxon signed-rank tests and Holm correction.
+
+\section{Results}
+\label{sec:results}
+Surrogate fidelity. On the thirty-five-task suite DyHPO+Mono reduces held-out learning-curve RMSE by a median 18 \% (inter-quartile range 15-25 \%) over vanilla DyHPO and by 12 \% over FastBO. The monotonicity-violation rate drops from \(0.76\ \pm\ 0.05\) to \(0.31\ \pm\ 0.04\).
+
+Optimisation speed. Median anytime regret reaches the final DyHPO value 35 \% sooner in wall-clock time; at 256 evaluations DyHPO+Mono wins on 27 tasks, ties on 6, and loses on 2 (Wilcoxon \(p<0.01\)). FastBO+Mono exhibits similar though slightly smaller gains, indicating that the regulariser generalises across surrogate families.
+
+Stress test. Two-way ANOVA shows significant main effects of \(\lambda\) and noise (\(p<0.001\)) and a negative interaction: the benefit of monotone regularisation grows as observation noise increases. At \(K=8\) evaluations and \(\sigma=0.1\), Cohens \(d=0.9\) indicates a large effect size.
+
+GPT-2 fine-tuning. DyHPO+Mono reaches validation perplexity 50 after 28 GPU-hours, whereas DyHPO requires 40 GPU-hours - saving roughly \(480\) GPU-hours and about \(400\) USD on the eight-GPU cluster. Final perplexity after forty-eight hours improves from 46.3 to 45.7. Surrogate overhead totals forty-two seconds (\(<0.1\ \%\)).
+
+Ablations. \(\lambda=0.03\) and \(0.3\) yield similar RMSE gains; \(\lambda>0.5\) over-smooths and hurts regret. Hiding the top ten percent of budgets during training severely degrades DyHPO but only mildly affects the monotone variant, demonstrating better extrapolation.
+
+Limitations. The pairwise penalty is quadratic in the number of budget observations per configuration; extremely dense logging could increase cost. Tasks whose loss genuinely increases after prolonged training (e.g., over-fitting) may be slightly mis-modelled, although such cases are rare in standard HPO benchmarks.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\linewidth]{ images/training\_loss\_full\_experiment.pdf }
+  \caption{Training loss trajectory of DyHPO with the monotone regulariser; lower is better.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\linewidth]{ images/validation\_rmse\_full\_experiment.pdf }
+  \caption{Validation RMSE of the surrogate on held-out learning-curve points; lower is better.}
+\end{figure}
+
+\section{Conclusion}
+\label{sec:conclusion}
+We introduced a minimal yet powerful monotonicity regulariser for learning-curve surrogates in multi-fidelity Bayesian optimisation. A single hinge-squared term added to the existing training loss biases the predictive mean to be non-increasing in budget, removing unrealistic upticks that mislead acquisition functions. The change requires only a few lines of code, is orthogonal to kernel choice and acquisition strategy, and increases computational cost by less than three percent.
+
+Experiments on thirty-five public benchmarks, a noise stress test, and a GPT-2 fine-tuning job demonstrate consistent gains: 15-25 \% lower surrogate RMSE, half the monotonicity violations, and up to 35 \% faster convergence in wall-clock time. These improvements translate into tangible GPU-hour and dollar savings without sacrificing final performance.
+
+Future work includes adaptive schedules for \(\lambda\), sparse approximations for densely logged learning curves, and extensions to scenarios where more training can hurt - such as over-fitting or catastrophic forgetting - by combining monotone and non-monotone phases. More broadly, our results highlight that injecting modest structural priors can yield outsized benefits in automated machine learning, encouraging further research into lightweight, principle-driven regularisers for surrogate modelling.
+
+All code, data loaders, and raw logs are publicly released to foster reproducibility and adoption of monotone surrogates in MF-BO frameworks such as FastBO, BOIL, and non-myopic look-ahead methods.
+
+This work was generated by \textsc{AIRAS} \citep{airas2025}.
+
+\bibliographystyle{iclr2024_conference}
+\bibliography{references}
+
+\end{document}
+
+# Error/Log:
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex)
+ restricted \write18 enabled.
+entering extended mode
+(./paper.tex
+LaTeX2e <2023-11-01> patch level 1
+L3 programming layer <2024-01-22>
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
+(./iclr2024_conference.sty
+(/usr/share/texlive/texmf-dist/tex/latex/eso-pic/eso-pic.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx)))
+(./fancyhdr.sty) (./natbib.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/times.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1ptm.fd))
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/share/texlive/texmf-dist/tex/generic/iftex/iftex.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+(/usr/share/texlive/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+(/usr/share/texlive/texmf-dist/tex/generic/infwarerr/infwarerr.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/hycolor/hycolor.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/auxhook/auxhook.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/share/texlive/texmf-dist/tex/latex/refcount/refcount.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
+(/usr/share/texlive/texmf-dist/tex/latex/kvoptions/kvoptions.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/etoolbox/etoolbox.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/share/texlive/texmf-dist/tex/generic/intcalc/intcalc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/puenc.def)
+(/usr/share/texlive/texmf-dist/tex/latex/url/url.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/bitset/bitset.sty
+(/usr/share/texlive/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/base/atbegshi-ltx.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/share/texlive/texmf-dist/tex/latex/base/atveryend-ltx.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
+(/usr/share/texlive/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/booktabs/booktabs.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/units/nicefrac.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/ifthen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.sty
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype-pdftex.def)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.cfg))
+(/usr/share/texlive/texmf-dist/tex/latex/titlesec/titletoc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty
+(/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
+(/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/colortbl/colortbl.sty
+(/usr/share/texlive/texmf-dist/tex/latex/tools/array.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/cleveref/cleveref.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/algorithms/algorithm.sty
+(/usr/share/texlive/texmf-dist/tex/latex/float/float.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algorithmicx.sty
+Document Style algorithmicx 1.2 - a greatly improved `algorithmic' style
+) (/usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algpseudocode.sty
+Document Style - pseudocode environments for use with the `algorithmicx' style
+) (/usr/share/texlive/texmf-dist/tex/latex/pgf/frontendlayer/tikz.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/basiclayer/pgf.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/utilities/pgfrcs.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfutil-common.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfutil-latex.def)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfrcs.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/pgf.revision.tex)))
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/basiclayer/pgfcore.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/systemlayer/pgfsys.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsys.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeys.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeyslibraryfiltered
+.code.tex)) (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgf.cfg)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsys-pdftex.def
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsys-common-pdf.de
+f)))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsysprotocol.code.
+tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcore.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathutil.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathparser.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.basic.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.trigonomet
+ric.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.random.cod
+e.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.comparison
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.base.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.round.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.misc.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.integerari
+thmetics.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathcalc.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfloat.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfint.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepoints.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathconstruct.
+code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathusage.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorescopes.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoregraphicstate.c
+ode.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoretransformation
+s.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorequick.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreobjects.code.t
+ex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathprocessing
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorearrows.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreshade.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreimage.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreexternal.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorelayers.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoretransparency.c
+ode.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepatterns.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorerdf.code.tex))
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduleshapes.code.tex
+) (/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduleplot.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/compatibility/pgfcomp-version-0-65
+.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/compatibility/pgfcomp-version-1-18
+.sty)) (/usr/share/texlive/texmf-dist/tex/latex/pgf/utilities/pgffor.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/utilities/pgfkeys.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeys.code.tex))
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/math/pgfmath.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgffor.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex
+
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplothandlers
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmodulematrix.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarytopaths.code.tex)))
+(/usr/share/texlive/texmf-dist/tex/latex/pgfplots/pgfplots.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.revision.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotscore.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/sys/pgfplotssysgeneric.code
+.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/pgfplotslibrary.code.t
+ex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/oldpgfcompatib/pgfplotsoldp
+gfsupp_loader.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryfpu.code.tex
+)
+Package pgfplots: loading complementary utilities for your pgf version...
+
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/oldpgfcompatib/pgfplotsoldp
+gfsupp_pgfutil-common-lists.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsutil.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotslists
+tructure.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotslists
+tructureext.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsarray
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsmatri
+x.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/numtable/pgfplotstableshare
+d.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsdeque
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsbinary.code.te
+x
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsbinary.data.co
+de.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsutil.verb.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/pgflibrarypgfplots.sur
+fshading.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/sys/pgflibrarypgfplots.surf
+shading.pgfsys-pdftex.def)))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotscolormap.code.
+tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotscolor.code.tex
+))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsstackedplots.code.t
+ex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsplothandlers.code.t
+ex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsmeshplothandler.cod
+e.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsmeshplotimage.code.
+tex)))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.scaling.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotscoordprocessing.cod
+e.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.errorbars.code.tex
+) (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.markers.code.tex
+) (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsticks.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.paths.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarydecorations.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduledecorations.cod
+e.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarydecorations.pathmorphing.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/decorations/pgflibrary
+decorations.pathmorphing.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarydecorations.pathreplacing.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/decorations/pgflibrary
+decorations.pathreplacing.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/tikzlibrarypgfplots.co
+ntourlua.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibraryplotmarks.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplotmarks.co
+de.tex))) (/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
+No file paper.aux.
+(/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-ptm.cfg)
+Package pgfplots notification 'compat/show suggested version=true': document ha
+s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
+
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
+
+Package natbib Warning: Citation `frazier-2018-tutorial' on page 1 undefined on
+ input line 55.
+
+
+Package natbib Warning: Citation `wistuba-2022-supervising' on page 1 undefined
+ on input line 55.
+
+
+Package natbib Warning: Citation `jiang-2024-efficient' on page 1 undefined on 
+input line 55.
+
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd)
+Underfull \vbox (badness 1776) has occurred while \output is active [1{/var/lib
+/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-dist/fonts/
+enc/dvips/base/8r.enc}]
+
+Package natbib Warning: Citation `frazier-2018-tutorial' on page 2 undefined on
+ input line 75.
+
+
+Package natbib Warning: Citation `kadra-2023-scaling' on page 2 undefined on in
+put line 75.
+
+
+Package natbib Warning: Citation `khazi-2023-deep' on page 2 undefined on input
+ line 75.
+
+
+Package natbib Warning: Citation `mallik-2023-priorband' on page 2 undefined on
+ input line 75.
+
+
+Package natbib Warning: Citation `hvarfner-2023-general' on page 2 undefined on
+ input line 75.
+
+
+Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
+ on input line 77.
+
+
+Package natbib Warning: Citation `jiang-2024-efficient' on page 2 undefined on 
+input line 77.
+
+
+Package natbib Warning: Citation `bohdal-2022-pasha' on page 2 undefined on inp
+ut line 79.
+
+
+Package natbib Warning: Citation `parkerholder-2020-provably' on page 2 undefin
+ed on input line 79.
+
+
+Package natbib Warning: Citation `wistuba-2021-few' on page 2 undefined on inpu
+t line 79.
+
+
+Package natbib Warning: Citation `khodak-2023-meta' on page 2 undefined on inpu
+t line 79.
+
+
+Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
+ on input line 87.
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.89 ...ons and thereby preserves the surrogate^^Y
+                                                  s flexibility to follow no...
+
+[2]
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.103 ...odification applies unchanged to DyHPO^^Y
+                                                  s deep-kernel GP and to Fa...
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.103 ...DyHPO^^Ys deep-kernel GP and to FastBO^^Y
+                                                  s embedded GP head.
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.109 DyHPO^^Y
+              s Expected Improvement over Minimal Fidelity (EIMF) and FastBO...
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.109 ...ver Minimal Fidelity (EIMF) and FastBO^^Y
+                                                  s saturation-aware selecto...
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.132 ...is assessed by two-way ANOVA and Cohen^^Y
+                                                  s \(d\).
+[3]
+
+Package natbib Warning: Citation `parkerholder-2020-provably' on page 4 undefin
+ed on input line 135.
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.146 ... evaluations and \(\sigma=0.1\), Cohen^^Y
+                                                  s \(d=0.9\) indicates a la...
+
+
+LaTeX Warning: File ` images/training\_loss\_full\_experiment.pdf ' not found o
+n input line 156.
+
+
+! Package pdftex.def Error: File `images/training_loss_full_experiment.pdf' not
+ found: using draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.156 ...es/training\_loss\_full\_experiment.pdf }
+                                                  
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd)
+Underfull \vbox (badness 10000) has occurred while \output is active [4]
+
+LaTeX Warning: File ` images/validation\_rmse\_full\_experiment.pdf ' not found
+ on input line 162.
+
+
+! Package pdftex.def Error: File `images/validation_rmse_full_experiment.pdf' n
+ot found: using draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.162 .../validation\_rmse\_full\_experiment.pdf }
+                                                  
+
+Underfull \vbox (badness 10000) has occurred while \output is active [5]
+
+Package natbib Warning: Citation `airas2025' on page 6 undefined on input line 
+176.
+
+No file paper.bbl.
+
+Package natbib Warning: There were undefined citations.
+
+[6] (./paper.aux)
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+
+Package rerunfilecheck Warning: File `paper.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+ )
+(see the transcript file for additional information)</usr/share/texlive/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/typ
+e1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfo
+nts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/m
+sbm10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></u
+sr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texliv
+e/texmf-dist/fonts/type1/urw/times/utmr8a.pfb>
+Output written on paper.pdf (6 pages, 132752 bytes).
+Transcript written on paper.log.
+This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
+The top-level auxiliary file: paper.aux
+The style file: iclr2024_conference.bst
+Database file #1: references.bib
+Warning--empty journal in bohdal-2022-pasha
+Warning--empty journal in frazier-2018-tutorial
+Warning--empty journal in jiang-2024-efficient
+Warning--empty journal in kadra-2023-scaling
+Warning--empty journal in khazi-2023-deep
+Warning--empty journal in khodak-2023-meta
+Warning--empty journal in mallik-2023-priorband
+Warning--empty journal in parkerholder-2020-provably
+Warning--empty journal in wistuba-2021-few
+Warning--empty journal in wistuba-2022-supervising
+(There were 10 warnings)
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex)
+ restricted \write18 enabled.
+entering extended mode
+(./paper.tex
+LaTeX2e <2023-11-01> patch level 1
+L3 programming layer <2024-01-22>
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
+(./iclr2024_conference.sty
+(/usr/share/texlive/texmf-dist/tex/latex/eso-pic/eso-pic.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx)))
+(./fancyhdr.sty) (./natbib.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/times.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1ptm.fd))
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/share/texlive/texmf-dist/tex/generic/iftex/iftex.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+(/usr/share/texlive/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+(/usr/share/texlive/texmf-dist/tex/generic/infwarerr/infwarerr.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/hycolor/hycolor.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/auxhook/auxhook.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/share/texlive/texmf-dist/tex/latex/refcount/refcount.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
+(/usr/share/texlive/texmf-dist/tex/latex/kvoptions/kvoptions.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/etoolbox/etoolbox.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/share/texlive/texmf-dist/tex/generic/intcalc/intcalc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/puenc.def)
+(/usr/share/texlive/texmf-dist/tex/latex/url/url.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/bitset/bitset.sty
+(/usr/share/texlive/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/base/atbegshi-ltx.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/share/texlive/texmf-dist/tex/latex/base/atveryend-ltx.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
+(/usr/share/texlive/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/booktabs/booktabs.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/units/nicefrac.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/ifthen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.sty
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype-pdftex.def)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.cfg))
+(/usr/share/texlive/texmf-dist/tex/latex/titlesec/titletoc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty
+(/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
+(/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/colortbl/colortbl.sty
+(/usr/share/texlive/texmf-dist/tex/latex/tools/array.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/cleveref/cleveref.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/algorithms/algorithm.sty
+(/usr/share/texlive/texmf-dist/tex/latex/float/float.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algorithmicx.sty
+Document Style algorithmicx 1.2 - a greatly improved `algorithmic' style
+) (/usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algpseudocode.sty
+Document Style - pseudocode environments for use with the `algorithmicx' style
+) (/usr/share/texlive/texmf-dist/tex/latex/pgf/frontendlayer/tikz.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/basiclayer/pgf.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/utilities/pgfrcs.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfutil-common.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfutil-latex.def)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfrcs.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/pgf.revision.tex)))
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/basiclayer/pgfcore.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/systemlayer/pgfsys.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsys.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeys.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeyslibraryfiltered
+.code.tex)) (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgf.cfg)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsys-pdftex.def
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsys-common-pdf.de
+f)))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsysprotocol.code.
+tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcore.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathutil.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathparser.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.basic.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.trigonomet
+ric.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.random.cod
+e.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.comparison
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.base.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.round.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.misc.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.integerari
+thmetics.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathcalc.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfloat.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfint.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepoints.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathconstruct.
+code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathusage.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorescopes.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoregraphicstate.c
+ode.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoretransformation
+s.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorequick.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreobjects.code.t
+ex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathprocessing
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorearrows.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreshade.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreimage.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreexternal.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorelayers.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoretransparency.c
+ode.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepatterns.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorerdf.code.tex))
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduleshapes.code.tex
+) (/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduleplot.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/compatibility/pgfcomp-version-0-65
+.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/compatibility/pgfcomp-version-1-18
+.sty)) (/usr/share/texlive/texmf-dist/tex/latex/pgf/utilities/pgffor.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/utilities/pgfkeys.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeys.code.tex))
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/math/pgfmath.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgffor.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex
+
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplothandlers
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmodulematrix.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarytopaths.code.tex)))
+(/usr/share/texlive/texmf-dist/tex/latex/pgfplots/pgfplots.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.revision.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotscore.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/sys/pgfplotssysgeneric.code
+.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/pgfplotslibrary.code.t
+ex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/oldpgfcompatib/pgfplotsoldp
+gfsupp_loader.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryfpu.code.tex
+)
+Package pgfplots: loading complementary utilities for your pgf version...
+
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/oldpgfcompatib/pgfplotsoldp
+gfsupp_pgfutil-common-lists.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsutil.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotslists
+tructure.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotslists
+tructureext.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsarray
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsmatri
+x.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/numtable/pgfplotstableshare
+d.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsdeque
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsbinary.code.te
+x
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsbinary.data.co
+de.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsutil.verb.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/pgflibrarypgfplots.sur
+fshading.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/sys/pgflibrarypgfplots.surf
+shading.pgfsys-pdftex.def)))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotscolormap.code.
+tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotscolor.code.tex
+))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsstackedplots.code.t
+ex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsplothandlers.code.t
+ex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsmeshplothandler.cod
+e.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsmeshplotimage.code.
+tex)))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.scaling.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotscoordprocessing.cod
+e.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.errorbars.code.tex
+) (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.markers.code.tex
+) (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsticks.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.paths.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarydecorations.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduledecorations.cod
+e.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarydecorations.pathmorphing.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/decorations/pgflibrary
+decorations.pathmorphing.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarydecorations.pathreplacing.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/decorations/pgflibrary
+decorations.pathreplacing.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/tikzlibrarypgfplots.co
+ntourlua.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibraryplotmarks.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplotmarks.co
+de.tex))) (/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
+(./paper.aux)
+(/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(./paper.out) (./paper.out)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-ptm.cfg)
+Package pgfplots notification 'compat/show suggested version=true': document ha
+s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
+
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
+
+Package natbib Warning: Citation `frazier-2018-tutorial' on page 1 undefined on
+ input line 55.
+
+
+Package natbib Warning: Citation `wistuba-2022-supervising' on page 1 undefined
+ on input line 55.
+
+
+Package natbib Warning: Citation `jiang-2024-efficient' on page 1 undefined on 
+input line 55.
+
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd)
+Underfull \vbox (badness 1776) has occurred while \output is active [1{/var/lib
+/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-dist/fonts/
+enc/dvips/base/8r.enc}]
+
+Package natbib Warning: Citation `frazier-2018-tutorial' on page 2 undefined on
+ input line 75.
+
+
+Package natbib Warning: Citation `kadra-2023-scaling' on page 2 undefined on in
+put line 75.
+
+
+Package natbib Warning: Citation `khazi-2023-deep' on page 2 undefined on input
+ line 75.
+
+
+Package natbib Warning: Citation `mallik-2023-priorband' on page 2 undefined on
+ input line 75.
+
+
+Package natbib Warning: Citation `hvarfner-2023-general' on page 2 undefined on
+ input line 75.
+
+
+Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
+ on input line 77.
+
+
+Package natbib Warning: Citation `jiang-2024-efficient' on page 2 undefined on 
+input line 77.
+
+
+Package natbib Warning: Citation `bohdal-2022-pasha' on page 2 undefined on inp
+ut line 79.
+
+
+Package natbib Warning: Citation `parkerholder-2020-provably' on page 2 undefin
+ed on input line 79.
+
+
+Package natbib Warning: Citation `wistuba-2021-few' on page 2 undefined on inpu
+t line 79.
+
+
+Package natbib Warning: Citation `khodak-2023-meta' on page 2 undefined on inpu
+t line 79.
+
+
+Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
+ on input line 87.
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.89 ...ons and thereby preserves the surrogate^^Y
+                                                  s flexibility to follow no...
+
+[2]
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.103 ...odification applies unchanged to DyHPO^^Y
+                                                  s deep-kernel GP and to Fa...
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.103 ...DyHPO^^Ys deep-kernel GP and to FastBO^^Y
+                                                  s embedded GP head.
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.109 DyHPO^^Y
+              s Expected Improvement over Minimal Fidelity (EIMF) and FastBO...
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.109 ...ver Minimal Fidelity (EIMF) and FastBO^^Y
+                                                  s saturation-aware selecto...
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.132 ...is assessed by two-way ANOVA and Cohen^^Y
+                                                  s \(d\).
+[3]
+
+Package natbib Warning: Citation `parkerholder-2020-provably' on page 4 undefin
+ed on input line 135.
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.146 ... evaluations and \(\sigma=0.1\), Cohen^^Y
+                                                  s \(d=0.9\) indicates a la...
+
+
+LaTeX Warning: File ` images/training\_loss\_full\_experiment.pdf ' not found o
+n input line 156.
+
+
+! Package pdftex.def Error: File `images/training_loss_full_experiment.pdf' not
+ found: using draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.156 ...es/training\_loss\_full\_experiment.pdf }
+                                                  
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd)
+Underfull \vbox (badness 10000) has occurred while \output is active [4]
+
+LaTeX Warning: File ` images/validation\_rmse\_full\_experiment.pdf ' not found
+ on input line 162.
+
+
+! Package pdftex.def Error: File `images/validation_rmse_full_experiment.pdf' n
+ot found: using draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.162 .../validation\_rmse\_full\_experiment.pdf }
+                                                  
+
+Underfull \vbox (badness 10000) has occurred while \output is active [5]
+
+Package natbib Warning: Citation `airas2025' on page 6 undefined on input line 
+176.
+
+(./paper.bbl)
+
+Package natbib Warning: There were undefined citations.
+
+[6] (./paper.aux
+
+Package natbib Warning: Citation(s) may have changed.
+(natbib)                Rerun to get citations correct.
+
+) )
+(see the transcript file for additional information)</usr/share/texlive/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/typ
+e1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfo
+nts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/m
+sbm10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></u
+sr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texliv
+e/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/urw/times/utmri8a.pfb>
+Output written on paper.pdf (6 pages, 147768 bytes).
+Transcript written on paper.log.
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex)
+ restricted \write18 enabled.
+entering extended mode
+(./paper.tex
+LaTeX2e <2023-11-01> patch level 1
+L3 programming layer <2024-01-22>
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
+(./iclr2024_conference.sty
+(/usr/share/texlive/texmf-dist/tex/latex/eso-pic/eso-pic.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/mathcolor.ltx)))
+(./fancyhdr.sty) (./natbib.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/times.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1ptm.fd))
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/hyperref.sty
+(/usr/share/texlive/texmf-dist/tex/generic/iftex/iftex.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+(/usr/share/texlive/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+(/usr/share/texlive/texmf-dist/tex/generic/infwarerr/infwarerr.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/hycolor/hycolor.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/auxhook/auxhook.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
+(/usr/share/texlive/texmf-dist/tex/latex/refcount/refcount.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
+(/usr/share/texlive/texmf-dist/tex/latex/kvoptions/kvoptions.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/etoolbox/etoolbox.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/pd1enc.def)
+(/usr/share/texlive/texmf-dist/tex/generic/intcalc/intcalc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/puenc.def)
+(/usr/share/texlive/texmf-dist/tex/latex/url/url.sty)
+(/usr/share/texlive/texmf-dist/tex/generic/bitset/bitset.sty
+(/usr/share/texlive/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/base/atbegshi-ltx.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/hyperref/hpdftex.def
+(/usr/share/texlive/texmf-dist/tex/latex/base/atveryend-ltx.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
+(/usr/share/texlive/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/booktabs/booktabs.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/units/nicefrac.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/ifthen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.sty
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype-pdftex.def)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.cfg))
+(/usr/share/texlive/texmf-dist/tex/latex/titlesec/titletoc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty
+(/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
+(/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty)))
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg)))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/colortbl/colortbl.sty
+(/usr/share/texlive/texmf-dist/tex/latex/tools/array.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/cleveref/cleveref.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/algorithms/algorithm.sty
+(/usr/share/texlive/texmf-dist/tex/latex/float/float.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algorithmicx.sty
+Document Style algorithmicx 1.2 - a greatly improved `algorithmic' style
+) (/usr/share/texlive/texmf-dist/tex/latex/algorithmicx/algpseudocode.sty
+Document Style - pseudocode environments for use with the `algorithmicx' style
+) (/usr/share/texlive/texmf-dist/tex/latex/pgf/frontendlayer/tikz.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/basiclayer/pgf.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/utilities/pgfrcs.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfutil-common.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfutil-latex.def)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfrcs.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/pgf.revision.tex)))
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/basiclayer/pgfcore.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/systemlayer/pgfsys.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsys.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeys.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeyslibraryfiltered
+.code.tex)) (/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgf.cfg)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsys-pdftex.def
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsys-common-pdf.de
+f)))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/systemlayer/pgfsysprotocol.code.
+tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcore.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathutil.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathparser.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.basic.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.trigonomet
+ric.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.random.cod
+e.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.comparison
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.base.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.round.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.misc.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.integerari
+thmetics.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathcalc.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfloat.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfint.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepoints.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathconstruct.
+code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathusage.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorescopes.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoregraphicstate.c
+ode.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoretransformation
+s.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorequick.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreobjects.code.t
+ex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathprocessing
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorearrows.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreshade.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreimage.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreexternal.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorelayers.code.te
+x)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcoretransparency.c
+ode.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepatterns.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/basiclayer/pgfcorerdf.code.tex))
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduleshapes.code.tex
+) (/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduleplot.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/compatibility/pgfcomp-version-0-65
+.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/compatibility/pgfcomp-version-1-18
+.sty)) (/usr/share/texlive/texmf-dist/tex/latex/pgf/utilities/pgffor.sty
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/utilities/pgfkeys.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeys.code.tex))
+(/usr/share/texlive/texmf-dist/tex/latex/pgf/math/pgfmath.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgffor.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex
+
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplothandlers
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmodulematrix.code.tex
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarytopaths.code.tex)))
+(/usr/share/texlive/texmf-dist/tex/latex/pgfplots/pgfplots.sty
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.revision.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotscore.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/sys/pgfplotssysgeneric.code
+.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/pgfplotslibrary.code.t
+ex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/oldpgfcompatib/pgfplotsoldp
+gfsupp_loader.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryfpu.code.tex
+)
+Package pgfplots: loading complementary utilities for your pgf version...
+
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/oldpgfcompatib/pgfplotsoldp
+gfsupp_pgfutil-common-lists.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsutil.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotslists
+tructure.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotslists
+tructureext.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsarray
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsmatri
+x.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/numtable/pgfplotstableshare
+d.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsdeque
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsbinary.code.te
+x
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsbinary.data.co
+de.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotsutil.verb.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/pgflibrarypgfplots.sur
+fshading.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/sys/pgflibrarypgfplots.surf
+shading.pgfsys-pdftex.def)))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotscolormap.code.
+tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/util/pgfplotscolor.code.tex
+))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsstackedplots.code.t
+ex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsplothandlers.code.t
+ex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsmeshplothandler.cod
+e.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsmeshplotimage.code.
+tex)))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.scaling.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotscoordprocessing.cod
+e.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.errorbars.code.tex
+) (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.markers.code.tex
+) (/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplotsticks.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/pgfplots.paths.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarydecorations.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/modules/pgfmoduledecorations.cod
+e.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarydecorations.pathmorphing.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/decorations/pgflibrary
+decorations.pathmorphing.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibrarydecorations.pathreplacing.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/decorations/pgflibrary
+decorations.pathreplacing.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgfplots/libs/tikzlibrarypgfplots.co
+ntourlua.code.tex))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tik
+zlibraryplotmarks.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplotmarks.co
+de.tex))) (/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
+(./paper.aux)
+(/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg))
+(./paper.out) (./paper.out)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-ptm.cfg)
+Package pgfplots notification 'compat/show suggested version=true': document ha
+s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
+
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd) [1{/var/lib/texmf/fo
+nts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-dist/fonts/enc/dvips
+/base/8r.enc}]
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.89 ...ons and thereby preserves the surrogate^^Y
+                                                  s flexibility to follow no...
+
+[2]
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.103 ...odification applies unchanged to DyHPO^^Y
+                                                  s deep-kernel GP and to Fa...
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.103 ...DyHPO^^Ys deep-kernel GP and to FastBO^^Y
+                                                  s embedded GP head.
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.109 DyHPO^^Y
+              s Expected Improvement over Minimal Fidelity (EIMF) and FastBO...
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.109 ...ver Minimal Fidelity (EIMF) and FastBO^^Y
+                                                  s saturation-aware selecto...
+
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.132 ...is assessed by two-way ANOVA and Cohen^^Y
+                                                  s \(d\).
+[3]
+
+! LaTeX Error: Unicode character ^^Y (U+0019)
+               not set up for use with LaTeX.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.146 ... evaluations and \(\sigma=0.1\), Cohen^^Y
+                                                  s \(d=0.9\) indicates a la...
+
+
+LaTeX Warning: File ` images/training\_loss\_full\_experiment.pdf ' not found o
+n input line 156.
+
+
+! Package pdftex.def Error: File `images/training_loss_full_experiment.pdf' not
+ found: using draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.156 ...es/training\_loss\_full\_experiment.pdf }
+                                                  
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd)
+Underfull \vbox (badness 10000) has occurred while \output is active [4]
+
+LaTeX Warning: File ` images/validation\_rmse\_full\_experiment.pdf ' not found
+ on input line 162.
+
+
+! Package pdftex.def Error: File `images/validation_rmse_full_experiment.pdf' n
+ot found: using draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.162 .../validation\_rmse\_full\_experiment.pdf }
+                                                  
+
+Underfull \vbox (badness 10000) has occurred while \output is active [5]
+(./paper.bbl) [6] (./paper.aux) )
+(see the transcript file for additional information)</usr/share/texlive/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/typ
+e1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfo
+nts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/m
+sbm10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></u
+sr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texliv
+e/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/urw/times/utmri8a.pfb>
+Output written on paper.pdf (6 pages, 148446 bytes).
+Transcript written on paper.log.
+
+Output:
+{
+    "latex_text": "\\PassOptionsToPackage{numbers}{natbib}\n\\documentclass{article} % For LaTeX2e\n\\usepackage{iclr2024_conference,times}\n\n% ------------------------------------------------------------\n% Standard packages\n% ------------------------------------------------------------\n\\usepackage[utf8]{inputenc}  % allow utf-8 input\n\\usepackage[T1]{fontenc}     % use 8-bit T1 fonts\n\\usepackage{hyperref}        % hyperlinks\n\\usepackage{url}             % simple URL typesetting\n\\usepackage{booktabs}        % professional-quality tables\n\\usepackage{amsfonts}        % blackboard math symbols\n\\usepackage{nicefrac}        % compact symbols for 1/2, etc.\n\\usepackage{microtype}       % microtypography\n\\usepackage{titletoc}\n\n% ------------------------------------------------------------\n% Extra packages used in the paper\n% ------------------------------------------------------------\n\\usepackage{subcaption}\n\\usepackage{graphicx}\n\\usepackage{amsmath}\n\\usepackage{multirow}\n\\usepackage{color}\n\\usepackage{colortbl}\n\\usepackage{cleveref}\n\\usepackage{algorithm}\n\\usepackage{algorithmicx}\n\\usepackage{algpseudocode}\n\\usepackage{tikz}\n\\usepackage{pgfplots}\n\\usepackage{float}\n\\usepackage{array}\n\\usepackage{tabularx}\n\\pgfplotsset{compat=newest}\n\n% ------------------------------------------------------------\n% Mathematical operators\n% ------------------------------------------------------------\n\\DeclareMathOperator*{\\argmin}{arg\\,min}\n\\DeclareMathOperator*{\\argmax}{arg\\,max}\n\n\\graphicspath{{../}}\n\n\\title{Monotone Surrogates Make Multi-Fidelity Bayesian Optimisation Faster and Safer}\n\n\\author{AIRAS}\n\n% ------------------------------------------------------------\n% Convenience commands\n% ------------------------------------------------------------\n\\newcommand{\\fix}{\\marginpar{FIX}}\n\\newcommand{\\new}{\\marginpar{NEW}}\n\n\\begin{document}\n\n\\maketitle\n\n\\begin{abstract}\nMulti-fidelity Bayesian optimisation (MF-BO) accelerates hyper-parameter search by modelling the validation loss that a configuration $x$ will reach after training for a budget $b$. Popular approaches such as DyHPO and FastBO fit a flexible Gaussian-process or tree surrogate by maximising the log-marginal likelihood of observed learning curves. When only a handful of noisy points are available this objective ignores the simple prior that, in expectation, additional training cannot increase the loss. The resulting non-monotone mean curves mislead the acquisition function toward obviously saturated budgets and waste compute. We introduce a one-line, architecture-agnostic remedy: a hinge-squared penalty on every pair of observations of the same configuration that violates monotonicity. The penalty is fully differentiable, weighted by a single hyper-parameter $\\lambda$, and adds just one extra backward pass to the original optimiser. Plugging the regulariser into DyHPO and FastBO halves the frequency of monotonicity violations, reduces held-out learning-curve RMSE by 15–25\\,\\%, and reaches the final regret of the unregularised baseline 35\\,\\% sooner – all at below three percent computational overhead. Extensive experiments on thirty-five public MF-HPO benchmarks, a controlled noise stress test, and an expensive GPT-2 fine-tuning job confirm that the method is both effective and robust.\n\\end{abstract}\n\n\\section{Introduction}\n\\label{sec:intro}\nHyper-parameter optimisation (HPO) is indispensable for modern machine learning, yet exhaustive search rapidly becomes infeasible as models grow in size, data volume, and training cost. Multi-fidelity Bayesian optimisation (MF-BO) mitigates this burden by evaluating low-cost proxies – short training runs or smaller data subsets – to guide exploration of the full-budget objective \\cite{frazier-2018-tutorial}. Current state-of-the-art MF-BO methods such as DyHPO \\cite{wistuba-2022-supervising} and FastBO \\cite{jiang-2024-efficient} learn a surrogate that jointly conditions on a candidate configuration $x$ and the training budget~$b$. An acquisition function then decides whether to continue training an existing model or to start a new one.\n\nDespite impressive empirical gains, existing learning-curve surrogates share a weakness: the predictive mean is learned solely from data likelihood. With few and noisy observations nothing prevents the fitted curve from decreasing and later rising with increasing budget, contradicting the well-known prior that more training should not harm expected validation loss. Such artefacts are not benign. Acquisition functions typically favour the budget with the steepest predicted descent; a spurious uptick therefore draws evaluations toward budgets that are already saturated.\n\nClassical approaches to enforce monotonicity – projection onto inequality-constrained Gaussian-processes or virtual derivative observations – complicate inference and scale poorly. Isotonic regression only handles one-dimensional inputs. What is needed is a cheap, differentiable, and architecture-agnostic mechanism that biases any surrogate toward monotone means without altering its kernel, likelihood, or acquisition logic.\n\nWe provide exactly such a mechanism: augment the training loss with a hinge-squared monotonicity penalty. Whenever two observations share the same configuration and $b_i<b_j$, the squared positive part of $m(x,b_i)-m(x,b_j)$ is added to the loss. A single hyper-parameter $\\lambda$ trades off data fit and monotone bias, and the patch costs a handful of lines of code.\n\n\\subsection{Contributions}\n\\begin{itemize}\n  \\item \\textbf{Universal regulariser}: A universal, one-line monotonicity regulariser that drops into any learning-curve surrogate; demonstrated on DyHPO and FastBO.\n  \\item \\textbf{Convex upper bound}: A convex-analysis interpretation showing that the hinge-squared term is the tightest convex upper bound on the expected violation probability.\n  \\item \\textbf{Empirical gains}: Extensive empirical evidence across thirty-five public MF-HPO tasks, a noise stress test, and a GPT-2 fine-tuning workload, yielding 15–25\\,\\% lower surrogate RMSE and up to 35\\,\\% wall-clock savings.\n  \\item \\textbf{Ablations and overhead}: Ablations over $\\lambda$, noise levels, budget extrapolation, and computational overhead ($<3\\,\\%$).\n\\end{itemize}\n\nThe remainder of the paper reviews related work, summarises the MF-BO background, details the proposed regulariser, describes the experimental protocol, presents results, discusses limitations, and concludes with avenues for future research.\n\n\\section{Related Work}\n\\label{sec:related}\nMonotone Gaussian-process models date back to constrained kriging and virtual derivative observations, but the required projections or augmented likelihoods are computationally heavy and hard to integrate into modern deep-kernel surrogates \\cite{frazier-2018-tutorial}. Deep Power Laws encode a parametric decreasing curve, forcing a custom kernel and sacrificing flexibility \\cite{kadra-2023-scaling}. Deep Ranking Ensembles preserve the rank order of configurations but do not exploit budget structure \\cite{khazi-2023-deep}. PriorBand and ColaBO accelerate optimisation by injecting user beliefs about promising regions yet leave learning-curve shape unconstrained \\cite{mallik-2023-priorband,hvarfner-2023-general}.\n\nDyHPO introduced a deep-kernel GP tailored to learning curves and an entropy-based acquisition across budgets \\cite{wistuba-2022-supervising}, while FastBO couples a tree-ensemble surrogate with an adaptive fidelity selector \\cite{jiang-2024-efficient}. Both achieve state-of-the-art regret but learn unconstrained means and therefore produce non-monotone artefacts. Our regulariser complements these methods by adding a mild inductive bias without touching their kernels or acquisition rules.\n\nScheduler-based alternatives such as PASHA \\cite{bohdal-2022-pasha} and PB2 \\cite{parkerholder-2020-provably} rely on successive-halving or population-bandit heuristics rather than full surrogates; nonetheless they still benefit from accurate learning-curve prediction when a surrogate guides their pruning or resampling. Transfer-learning surrogates for few-shot HPO \\cite{wistuba-2021-few} and meta-bandit algorithms \\cite{khodak-2023-meta} share information across tasks but do not address within-task monotonicity, making our approach complementary.\n\nTo our knowledge no previous work offers a generic, low-cost remedy for monotonicity violations in learning-curve surrogates. This paper fills that gap.\n\n\\section{Background}\n\\label{sec:background}\nProblem setting. For a configuration $x$ and a training budget $b$, let $y(x,b)$ denote the observed validation loss. We assume that for every $x$ the expected learning curve $\\mu(x,b)=\\mathbb{E}[y(x,b)]$ is non-increasing in $b$ and that observations are perturbed by independent Gaussian noise with variance $\\sigma^{2}$. The optimisation goal is to find $x^{\\ast}$ minimising $y(x^{\\ast},B_{\\max})$ while querying only a limited number of $(x,b)$ pairs. A surrogate model $m(x,b;\\theta)$ provides a predictive mean and variance used by an acquisition function $\\alpha(x,b)$ during optimisation.\n\nDyHPO surrogate. DyHPO employs a deep-kernel Gaussian process: an MLP $\\phi$ embeds $(x,b)$ into a latent space where a Matérn kernel operates \\cite{wistuba-2022-supervising}. The parameters $\\theta$ include GP hyper-parameters and network weights and are learned by minimising the negative log-marginal likelihood $L_{\\mathrm{nll}}(\\theta)$.\n\nMonotonicity prior. Domain knowledge states that $\\mu(x,b_i)\\geq\\mu(x,b_j)$ whenever $b_i<b_j$. Enforcing this strictly across all pairs is computationally prohibitive, motivating a soft penalty that discourages but does not forbid violations and thereby preserves the surrogate's flexibility to follow noisy data.\n\n\\section{Method}\n\\label{sec:method}\n\\subsection{Regularised objective}\nLet $D=\\{(x_k,b_k,y_k)\\}_{k=1}^{N}$ be the data. Consider all index pairs $(i,j)$ such that $x_i=x_j$ and $b_i<b_j$. Define the individual violation\n\\[\n  v_{ij}(\\theta)=\\max\\bigl\\{0,\\;m(x_i,b_i;\\theta)-m(x_j,b_j;\\theta)\\bigr\\}^{2}.\n\\]\nThe monotonicity loss is $L_{\\mathrm{mono}}(\\theta)=\\operatorname{mean}_{(i,j)} v_{ij}(\\theta)$. The full training objective becomes\n$L(\\theta)=L_{\\mathrm{nll}}(\\theta)+\\lambda\\,L_{\\mathrm{mono}}(\\theta)$.\n\n\\subsection{Efficient optimisation and cost}\nGradients of $L$ are obtained via automatic differentiation; therefore existing optimiser code remains unchanged. Pairwise enumeration is quadratic in the number of budgets per configuration but inexpensive in practice because learning curves seldom exceed fifty points. Across all benchmarks the extra backward pass increases floating-point operations by less than three percent.\n\n\\subsection{Implementation notes}\nAfter computing the surrogate mean for a mini-batch, build pairwise indices where budgets differ within the same configuration, apply the hinge-squared penalty, and add $\\lambda$ times its mean to the negative log-likelihood. This modification applies unchanged to DyHPO's deep-kernel GP and to FastBO's embedded GP head.\n\n\\subsection{Choosing the regularisation weight}\nA short sweep over $\\{0,\\ 0.03,\\ 0.1,\\ 0.3\\}$ is run per task. A rough guideline $\\lambda\\approx \\sigma/\\Delta$, where $\\Delta$ is the typical loss drop between adjacent budgets, balances data fit and monotone bias; empirically $\\lambda=0.1$ works well across domains.\n\n\\subsection{Acquisition functions}\nDyHPO's Expected Improvement over Minimal Fidelity (EIMF) and FastBO's saturation-aware selector are used unchanged. Because the surrogate now predicts smoother, non-increasing curves, the acquisition function focuses on budgets that can still improve and avoids wasted evaluations.\n\n\\begin{algorithm}[t]\n  \\caption{Training a surrogate with hinge-squared monotonicity regularisation}\n  \\begin{algorithmic}[1]\n    \\State \\textbf{Input:} data $D=\\{(x_k,b_k,y_k)\\}_{k=1}^{N}$, weight $\\lambda$, parameters $\\theta$, learning rate $\\eta$\n    \\Repeat\n      \\State Compute negative log-marginal likelihood $L_{\\mathrm{nll}}(\\theta)$\n      \\State Build pair set $\\mathcal{P}=\\{(i,j): x_i=x_j,\\ b_i<b_j\\}$\n      \\State \\textbf{for} all $(i,j)\\in\\mathcal{P}$ \\textbf{do} $v_{ij}\\leftarrow\\max\\{0,\\,m(x_i,b_i;\\theta)-m(x_j,b_j;\\theta)\\}^{2}$\n      \\State $L_{\\mathrm{mono}}\\leftarrow\\operatorname{mean}_{(i,j)\\in\\mathcal{P}} v_{ij}$\n      \\State Total loss: $L\\leftarrow L_{\\mathrm{nll}}+\\lambda\\,L_{\\mathrm{mono}}$\n      \\State Update parameters: $\\theta\\leftarrow\\theta-\\eta\\,\\nabla_{\\theta}L$\n    \\Until{convergence}\n  \\end{algorithmic}\n\\end{algorithm}\n\n\\section{Experimental Setup}\n\\label{sec:experimental}\n\\subsection{Large benchmark suite}\nWe combine LCBench-20 (image NAS), NASBench-201 (three datasets $\\times$ three budgets), and twelve Hyperband-RL tabular tasks, yielding thirty-five MF-HPO problems with pre-computed fidelity tables. Each optimiser receives 256 evaluations, repeated for ten random seeds. Metrics: anytime regret versus wall-clock time, surrogate RMSE on a 20\\,\\% chronological hold-out, and monotonicity-violation rate. Baselines: Random Search with SHA, DyHPO, FastBO, and their monotone variants. Results are reported for (i) task-specific best $\\lambda$ and (ii) fixed $\\lambda=0.1$.\n\n\\subsection{Data-scarce stress test}\nFive low-cost LCBench tasks are evaluated with $K\\in\\{8,16,32\\}$ evaluations and injected Gaussian noise $\\sigma\\in\\{0,\\ 0.05,\\ 0.1\\}$. We compare DyHPO and DyHPO+Mono ($\\lambda\\in\\{0.1,\\ 0.3\\}$) across thirty seeds. Metrics: best-seen regret, violation rate, and budget-allocation histogram. Significance is assessed by two-way ANOVA and Cohen's $d$.\n\n\\subsection{GPT-2 fine-tuning}\nThe surrogate is embedded into PB2 \\cite{parkerholder-2020-provably} for GPT-2-Medium fine-tuned on WikiText-103. Thirty-two concurrent agents run on eight A100 GPUs for forty-eight hours. Primary metric: GPU-hours until validation perplexity $\\leq 50$. Secondary metrics: final perplexity, peak VRAM, and surrogate overhead.\n\n\\subsection{Shared implementation and evaluation protocols}\nAll surrogates use Adam (learning rate $3\\times10^{-3}$, 10\\,000 steps, mini-batch size 128). Hardware for the benchmark suite is a single RTX-2080 Ti; GPT-2 uses the training cluster but logs surrogate overhead. Statistical significance on the suite is evaluated with Wilcoxon signed-rank tests and Holm correction.\n\n\\section{Results}\n\\label{sec:results}\n\\textbf{Surrogate fidelity.} On the thirty-five-task suite DyHPO+Mono reduces held-out learning-curve RMSE by a median 18\\,\\% (inter-quartile range 15–25\\,\\%) over vanilla DyHPO and by 12\\,\\% over FastBO. The monotonicity-violation rate drops from $0.76\\ \\pm\\ 0.05$ to $0.31\\ \\pm\\ 0.04$.\n\n\\textbf{Optimisation speed.} Median anytime regret reaches the final DyHPO value 35\\,\\% sooner in wall-clock time; at 256 evaluations DyHPO+Mono wins on 27 tasks, ties on 6, and loses on 2 (Wilcoxon $p<0.01$). FastBO+Mono exhibits similar though slightly smaller gains, indicating that the regulariser generalises across surrogate families.\n\n\\textbf{Stress test.} Two-way ANOVA shows significant main effects of $\\lambda$ and noise ($p<0.001$) and a negative interaction: the benefit of monotone regularisation grows as observation noise increases. At $K=8$ evaluations and $\\sigma=0.1$, Cohen's $d=0.9$ indicates a large effect size.\n\n\\textbf{GPT-2 fine-tuning.} DyHPO+Mono reaches validation perplexity 50 after 28 GPU-hours, whereas DyHPO requires 40 GPU-hours – saving roughly 480 GPU-hours and about \\$400 on the eight-GPU cluster. Final perplexity after forty-eight hours improves from 46.3 to 45.7. Surrogate overhead totals forty-two seconds ($<0.1\\,\\%$).\n\n\\textbf{Ablations.} $\\lambda=0.03$ and $0.3$ yield similar RMSE gains; $\\lambda>0.5$ over-smooths and hurts regret. Hiding the top ten percent of budgets during training severely degrades DyHPO but only mildly affects the monotone variant, demonstrating better extrapolation.\n\n\\textbf{Limitations.} The pairwise penalty is quadratic in the number of budget observations per configuration; extremely dense logging could increase cost. Tasks whose loss genuinely increases after prolonged training (e.g., over-fitting) may be slightly mis-modelled, although such cases are rare in standard HPO benchmarks.\n\n\\begin{figure}[H]\n  \\centering\n  \\includegraphics[width=0.7\\linewidth]{images/training_loss_full_experiment.pdf}\n  \\caption{Training-loss trajectory of DyHPO with the monotone regulariser; lower is better.}\n\\end{figure}\n\n\\begin{figure}[H]\n  \\centering\n  \\includegraphics[width=0.7\\linewidth]{images/validation_rmse_full_experiment.pdf}\n  \\caption{Validation RMSE of the surrogate on held-out learning-curve points; lower is better.}\n\\end{figure}\n\n\\section{Conclusion}\n\\label{sec:conclusion}\nWe introduced a minimal yet powerful monotonicity regulariser for learning-curve surrogates in multi-fidelity Bayesian optimisation. A single hinge-squared term added to the existing training loss biases the predictive mean to be non-increasing in budget, removing unrealistic upticks that mislead acquisition functions. The change requires only a few lines of code, is orthogonal to kernel choice and acquisition strategy, and increases computational cost by less than three percent.\n\nExperiments on thirty-five public benchmarks, a noise stress test, and a GPT-2 fine-tuning job demonstrate consistent gains: 15–25\\,\\% lower surrogate RMSE, half the monotonicity violations, and up to 35\\,\\% faster convergence in wall-clock time. These improvements translate into tangible GPU-hour and dollar savings without sacrificing final performance.\n\nFuture work includes adaptive schedules for $\\lambda$, sparse approximations for densely logged learning curves, and extensions to scenarios where more training can hurt – such as over-fitting or catastrophic forgetting – by combining monotone and non-monotone phases. More broadly, our results highlight that injecting modest structural priors can yield outsized benefits in automated machine learning, encouraging further research into lightweight, principled regularisers for surrogate modelling.\n\nAll code, data loaders, and raw logs are publicly released to foster reproducibility and adoption of monotone surrogates in MF-BO frameworks such as FastBO, BOIL, and non-myopic look-ahead methods.\n\nThis work was generated by \\textsc{AIRAS}.\\footnote{A short description of AIRAS and links to the artefacts are available in the supplementary material.}\n\n\\bibliographystyle{iclr2024_conference}\n\\bibliography{references}\n\n\\end{document}"
+}
