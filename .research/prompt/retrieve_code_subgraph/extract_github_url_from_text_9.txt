@@ -1,0 +1,17 @@
+
+Input:
+# Task
+You carefully read the contents of the “Paper Outline” and select one GitHub link from the “GitHub URLs List” that you think is most relevant to the contents.
+# Constraints
+- Output the index number corresponding to the selected GitHub URL.
+- Be sure to select only one GitHub URL.
+- If there is no related GitHub link, output None.
+# Paper Outline
+DyHPO utilizes a Gaussian Process (GP) surrogate model with a deep kernel. The kernel's feature extractor (φ) is a neural network, processing normalized budget and hyperparameter configurations through linear layers, and learning curves through one-dimensional convolutions followed by global max pooling. Parameters are optimized via maximum likelihood using Adam. A Multi-Fidelity Expected Improvement (EIMF) acquisition function dynamically selects promising configurations for incremental training.
+
+# GitHub URLs List
+['https://github.com/releaunifreiburg/DyHPO', 'https://github.com/automl/LCBench', 'https://github.com/google-research/google-research', 'https://github.com/D-X-Y/NAS-Bench-201', 'https://github.com/automl/HpBandSter', 'https://github.com/automl/DEHB', 'https://github.com/dragonfly/dragonfly', 'https://github.com/shib0li/DNN-MFBO']
+Output:
+{
+    "index": 0
+}
