@@ -6,5 +6,82 @@
     "Hyperband algorithm efficiency",
     "Early stopping hyperparameter search",
     "Meta-learning hyperparameter tuning"
+  ],
+  "research_study_list": [
+    {
+      "title": "Scalable First-Order Bayesian Optimization via Structured Automatic Differentiation"
+    },
+    {
+      "title": "Scalable First-Order Bayesian Optimization via Structured Automatic Differentiation"
+    },
+    {
+      "title": "Efficient Nonmyopic Bayesian Optimization via One-Shot Multi-Step Trees"
+    },
+    {
+      "title": "Efficient Hyperparameter Optimization with Adaptive Fidelity Identification"
+    },
+    {
+      "title": "A General Framework for User-Guided Bayesian Optimization"
+    },
+    {
+      "title": "Multi-Fidelity Bayesian Optimization via Deep Neural Networks"
+    },
+    {
+      "title": "Efficient Hyperparameter Optimization with Adaptive Fidelity Identification"
+    },
+    {
+      "title": "Batch Multi-Fidelity Bayesian Optimization with  Deep Auto-Regressive Networks"
+    },
+    {
+      "title": "Supervising the Multi-Fidelity Race of Hyperparameter Configurations"
+    },
+    {
+      "title": "Supervising the Multi-Fidelity Race of Hyperparameter Configurations"
+    },
+    {
+      "title": "Provably Efficient Online Hyperparameter Optimization with Population-Based Bandits"
+    },
+    {
+      "title": "PriorBand: Practical Hyperparameter Optimization in the Age of Deep Learning"
+    },
+    {
+      "title": "Efficient Hyperparameter Optimization with Adaptive Fidelity Identification"
+    },
+    {
+      "title": "Bayesian Optimization for Iterative Learning"
+    },
+    {
+      "title": "PASHA: Efficient HPO and NAS with Progressive Resource Allocation"
+    },
+    {
+      "title": "Bayesian Optimization for Iterative Learning"
+    },
+    {
+      "title": "Scaling Laws for Hyperparameter Optimization"
+    },
+    {
+      "title": "Hyperparameter Optimization through Neural Network Partitioning"
+    },
+    {
+      "title": "PASHA: Efficient HPO and NAS with Progressive Resource Allocation"
+    },
+    {
+      "title": "Reshuffling Resampling Splits Can Improve Generalization of Hyperparameter Optimization"
+    },
+    {
+      "title": "Few-Shot Bayesian Optimization with Deep Kernel Surrogates"
+    },
+    {
+      "title": "Meta-learning to Improve Pre-training"
+    },
+    {
+      "title": "Deep Ranking Ensembles for Hyperparameter Optimization"
+    },
+    {
+      "title": "Learning to Mutate with Hypergradient Guided Population"
+    },
+    {
+      "title": "Meta-Learning Adversarial Bandit Algorithms"
+    }
   ]
 }
