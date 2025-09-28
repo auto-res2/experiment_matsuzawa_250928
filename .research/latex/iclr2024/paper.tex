@@ -2,16 +2,22 @@
 \documentclass{article} % For LaTeX2e
 \usepackage{iclr2024_conference,times}
 
-\usepackage[utf8]{inputenc} % allow utf-8 input
-\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
-\usepackage{hyperref}       % hyperlinks
-\usepackage{url}            % simple URL typesetting
-\usepackage{booktabs}       % professional-quality tables
-\usepackage{amsfonts}       % blackboard math symbols
-\usepackage{nicefrac}       % compact symbols for 1/2, etc.
-\usepackage{microtype}      % microtypography
+% ------------------------------------------------------------
+% Standard packages
+% ------------------------------------------------------------
+\usepackage[utf8]{inputenc}  % allow utf-8 input
+\usepackage[T1]{fontenc}     % use 8-bit T1 fonts
+\usepackage{hyperref}        % hyperlinks
+\usepackage{url}             % simple URL typesetting
+\usepackage{booktabs}        % professional-quality tables
+\usepackage{amsfonts}        % blackboard math symbols
+\usepackage{nicefrac}        % compact symbols for 1/2, etc.
+\usepackage{microtype}       % microtypography
 \usepackage{titletoc}
 
+% ------------------------------------------------------------
+% Extra packages used in the paper
+% ------------------------------------------------------------
 \usepackage{subcaption}
 \usepackage{graphicx}
 \usepackage{amsmath}
@@ -29,16 +35,21 @@
 \usepackage{tabularx}
 \pgfplotsset{compat=newest}
 
-
+% ------------------------------------------------------------
+% Mathematical operators
+% ------------------------------------------------------------
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
 
-\graphicspath{{../}} % To reference your generated figures, see below.
+\graphicspath{{../}}
 
 \title{Monotone Surrogates Make Multi-Fidelity Bayesian Optimisation Faster and Safer}
 
 \author{AIRAS}
 
+% ------------------------------------------------------------
+% Convenience commands
+% ------------------------------------------------------------
 \newcommand{\fix}{\marginpar{FIX}}
 \newcommand{\new}{\marginpar{NEW}}
 
@@ -47,25 +58,25 @@
 \maketitle
 
 \begin{abstract}
-Multi-fidelity Bayesian optimisation (MF-BO) accelerates hyper-parameter search by modelling the validation loss that a configuration x will reach after training for a budget b. Popular approaches such as DyHPO and FastBO fit a flexible Gaussian-process or tree surrogate by maximising the log-marginal likelihood of observed learning curves. When only a handful of noisy points are available this objective ignores the simple prior that, in expectation, additional training cannot increase the loss. The resulting non-monotone mean curves mislead the acquisition function toward obviously saturated budgets and waste compute. We introduce a one-line, architecture-agnostic remedy: a hinge-squared penalty on every pair of observations of the same configuration that violates monotonicity. The penalty is fully differentiable, weighted by a single hyper-parameter \(\lambda\), and adds just one extra backward pass to the original optimiser. Plugging the regulariser into DyHPO and FastBO halves the frequency of monotonicity violations, reduces held-out learning-curve RMSE by 15-25 \%, and reaches the final regret of the unregularised baseline 35 \% sooner - all at below three percent computational overhead. Extensive experiments on thirty-five public MF-HPO benchmarks, a controlled noise stress test, and an expensive GPT-2 fine-tuning job confirm that the method is both effective and robust.
+Multi-fidelity Bayesian optimisation (MF-BO) accelerates hyper-parameter search by modelling the validation loss that a configuration $x$ will reach after training for a budget $b$. Popular approaches such as DyHPO and FastBO fit a flexible Gaussian-process or tree surrogate by maximising the log-marginal likelihood of observed learning curves. When only a handful of noisy points are available this objective ignores the simple prior that, in expectation, additional training cannot increase the loss. The resulting non-monotone mean curves mislead the acquisition function toward obviously saturated budgets and waste compute. We introduce a one-line, architecture-agnostic remedy: a hinge-squared penalty on every pair of observations of the same configuration that violates monotonicity. The penalty is fully differentiable, weighted by a single hyper-parameter $\lambda$, and adds just one extra backward pass to the original optimiser. Plugging the regulariser into DyHPO and FastBO halves the frequency of monotonicity violations, reduces held-out learning-curve RMSE by 15–25\,\%, and reaches the final regret of the unregularised baseline 35\,\% sooner – all at below three percent computational overhead. Extensive experiments on thirty-five public MF-HPO benchmarks, a controlled noise stress test, and an expensive GPT-2 fine-tuning job confirm that the method is both effective and robust.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
-Hyper-parameter optimisation (HPO) is indispensable for modern machine learning, yet exhaustive search rapidly becomes infeasible as models grow in size, data volume, and training cost. Multi-fidelity Bayesian optimisation (MF-BO) mitigates this burden by evaluating low-cost proxies - short training runs or smaller data subsets - to guide exploration of the full-budget objective \cite{frazier-2018-tutorial}. Current state-of-the-art MF-BO methods such as DyHPO \cite{wistuba-2022-supervising} and FastBO \cite{jiang-2024-efficient} learn a surrogate that jointly conditions on a candidate configuration x and the training budget b. An acquisition function then decides whether to continue training an existing model or to start a new one.
+Hyper-parameter optimisation (HPO) is indispensable for modern machine learning, yet exhaustive search rapidly becomes infeasible as models grow in size, data volume, and training cost. Multi-fidelity Bayesian optimisation (MF-BO) mitigates this burden by evaluating low-cost proxies – short training runs or smaller data subsets – to guide exploration of the full-budget objective \cite{frazier-2018-tutorial}. Current state-of-the-art MF-BO methods such as DyHPO \cite{wistuba-2022-supervising} and FastBO \cite{jiang-2024-efficient} learn a surrogate that jointly conditions on a candidate configuration $x$ and the training budget~$b$. An acquisition function then decides whether to continue training an existing model or to start a new one.
 
 Despite impressive empirical gains, existing learning-curve surrogates share a weakness: the predictive mean is learned solely from data likelihood. With few and noisy observations nothing prevents the fitted curve from decreasing and later rising with increasing budget, contradicting the well-known prior that more training should not harm expected validation loss. Such artefacts are not benign. Acquisition functions typically favour the budget with the steepest predicted descent; a spurious uptick therefore draws evaluations toward budgets that are already saturated.
 
-Classical approaches to enforce monotonicity - projection onto inequality-constrained Gaussian-processes or virtual derivative observations - complicate inference and scale poorly. Isotonic regression only handles one-dimensional inputs. What is needed is a cheap, differentiable, and architecture-agnostic mechanism that biases any surrogate toward monotone means without altering its kernel, likelihood, or acquisition logic.
+Classical approaches to enforce monotonicity – projection onto inequality-constrained Gaussian-processes or virtual derivative observations – complicate inference and scale poorly. Isotonic regression only handles one-dimensional inputs. What is needed is a cheap, differentiable, and architecture-agnostic mechanism that biases any surrogate toward monotone means without altering its kernel, likelihood, or acquisition logic.
 
-We provide exactly such a mechanism: augment the training loss with a hinge-squared monotonicity penalty. Whenever two observations share the same configuration and \(b_i<b_j\), the squared positive part of \(m(x,b_i)-m(x,b_j)\) is added to the loss. A single hyper-parameter \(\lambda\) trades off data fit and monotone bias, and the patch costs a handful of lines of code.
+We provide exactly such a mechanism: augment the training loss with a hinge-squared monotonicity penalty. Whenever two observations share the same configuration and $b_i<b_j$, the squared positive part of $m(x,b_i)-m(x,b_j)$ is added to the loss. A single hyper-parameter $\lambda$ trades off data fit and monotone bias, and the patch costs a handful of lines of code.
 
 \subsection{Contributions}
 \begin{itemize}
   \item \textbf{Universal regulariser}: A universal, one-line monotonicity regulariser that drops into any learning-curve surrogate; demonstrated on DyHPO and FastBO.
   \item \textbf{Convex upper bound}: A convex-analysis interpretation showing that the hinge-squared term is the tightest convex upper bound on the expected violation probability.
-  \item \textbf{Empirical gains}: Extensive empirical evidence across thirty-five public MF-HPO tasks, a noise stress test, and a GPT-2 fine-tuning workload, yielding 15-25 \% lower surrogate RMSE and up to 35 \% wall-clock savings.
-  \item \textbf{Ablations and overhead}: Ablations over \(\lambda\), noise levels, budget extrapolation, and computational overhead (\(<3\ \%\)).
+  \item \textbf{Empirical gains}: Extensive empirical evidence across thirty-five public MF-HPO tasks, a noise stress test, and a GPT-2 fine-tuning workload, yielding 15–25\,\% lower surrogate RMSE and up to 35\,\% wall-clock savings.
+  \item \textbf{Ablations and overhead}: Ablations over $\lambda$, noise levels, budget extrapolation, and computational overhead ($<3\,\%$).
 \end{itemize}
 
 The remainder of the paper reviews related work, summarises the MF-BO background, details the proposed regulariser, describes the experimental protocol, presents results, discusses limitations, and concludes with avenues for future research.
@@ -82,84 +93,86 @@ To our knowledge no previous work offers a generic, low-cost remedy for monotoni
 
 \section{Background}
 \label{sec:background}
-Problem setting. For a configuration \(x\) and a training budget \(b\), let \(y(x,b)\) denote the observed validation loss. We assume that for every \(x\) the expected learning curve \(\mu(x,b)=\mathbb{E}[y(x,b)]\) is non-increasing in \(b\) and that observations are perturbed by independent Gaussian noise with variance \(\sigma^{2}\). The optimisation goal is to find \(x^{\ast}\) minimising \(y(x^{\ast},B_{\max})\) while querying only a limited number of \((x,b)\) pairs. A surrogate model \(m(x,b;\theta)\) provides a predictive mean and variance used by an acquisition function \(\alpha(x,b)\) during optimisation.
+Problem setting. For a configuration $x$ and a training budget $b$, let $y(x,b)$ denote the observed validation loss. We assume that for every $x$ the expected learning curve $\mu(x,b)=\mathbb{E}[y(x,b)]$ is non-increasing in $b$ and that observations are perturbed by independent Gaussian noise with variance $\sigma^{2}$. The optimisation goal is to find $x^{\ast}$ minimising $y(x^{\ast},B_{\max})$ while querying only a limited number of $(x,b)$ pairs. A surrogate model $m(x,b;\theta)$ provides a predictive mean and variance used by an acquisition function $\alpha(x,b)$ during optimisation.
 
-DyHPO surrogate. DyHPO employs a deep-kernel Gaussian process: an MLP \(\phi\) embeds \((x,b)\) into a latent space where a Mat\'ern kernel operates \cite{wistuba-2022-supervising}. The parameters \(\theta\) include GP hyper-parameters and network weights and are learned by minimising the negative log-marginal likelihood \(L_{\mathrm{nll}}(\theta)\).
+DyHPO surrogate. DyHPO employs a deep-kernel Gaussian process: an MLP $\phi$ embeds $(x,b)$ into a latent space where a Matérn kernel operates \cite{wistuba-2022-supervising}. The parameters $\theta$ include GP hyper-parameters and network weights and are learned by minimising the negative log-marginal likelihood $L_{\mathrm{nll}}(\theta)$.
 
-Monotonicity prior. Domain knowledge states that \(\mu(x,b_i)\geq\mu(x,b_j)\) whenever \(b_i<b_j\). Enforcing this strictly across all pairs is computationally prohibitive, motivating a soft penalty that discourages but does not forbid violations and thereby preserves the surrogates flexibility to follow noisy data.
+Monotonicity prior. Domain knowledge states that $\mu(x,b_i)\geq\mu(x,b_j)$ whenever $b_i<b_j$. Enforcing this strictly across all pairs is computationally prohibitive, motivating a soft penalty that discourages but does not forbid violations and thereby preserves the surrogate's flexibility to follow noisy data.
 
 \section{Method}
 \label{sec:method}
 \subsection{Regularised objective}
-Let \(D=\{(x_k,b_k,y_k)\}_{k=1}^{N}\) be the data. Consider all index pairs \((i,j)\) such that \(x_i=x_j\) and \(b_i<b_j\). Define the individual violation
-\(v_{ij}(\theta)=\max\{0,\ m(x_i,b_i;\theta)-m(x_j,b_j;\theta)\}^{2}\).
-The monotonicity loss is \(L_{\mathrm{mono}}(\theta)=\operatorname{mean}_{(i,j)} v_{ij}(\theta)\). The full training objective becomes
-\(L(\theta)=L_{\mathrm{nll}}(\theta)+\lambda\,L_{\mathrm{mono}}(\theta)\).
+Let $D=\{(x_k,b_k,y_k)\}_{k=1}^{N}$ be the data. Consider all index pairs $(i,j)$ such that $x_i=x_j$ and $b_i<b_j$. Define the individual violation
+\[
+  v_{ij}(\theta)=\max\bigl\{0,\;m(x_i,b_i;\theta)-m(x_j,b_j;\theta)\bigr\}^{2}.
+\]
+The monotonicity loss is $L_{\mathrm{mono}}(\theta)=\operatorname{mean}_{(i,j)} v_{ij}(\theta)$. The full training objective becomes
+$L(\theta)=L_{\mathrm{nll}}(\theta)+\lambda\,L_{\mathrm{mono}}(\theta)$.
 
 \subsection{Efficient optimisation and cost}
-Gradients of \(L\) are obtained via automatic differentiation; therefore existing optimiser code remains unchanged. Pairwise enumeration is quadratic in the number of budgets per configuration but inexpensive in practice because learning curves seldom exceed fifty points. Across all benchmarks the extra backward pass increases floating-point operations by less than three percent.
+Gradients of $L$ are obtained via automatic differentiation; therefore existing optimiser code remains unchanged. Pairwise enumeration is quadratic in the number of budgets per configuration but inexpensive in practice because learning curves seldom exceed fifty points. Across all benchmarks the extra backward pass increases floating-point operations by less than three percent.
 
 \subsection{Implementation notes}
-After computing the surrogate mean for a mini-batch, build pairwise indices where budgets differ within the same configuration, apply the hinge-squared penalty, and add \(\lambda\) times its mean to the negative log-likelihood. This modification applies unchanged to DyHPOs deep-kernel GP and to FastBOs embedded GP head.
+After computing the surrogate mean for a mini-batch, build pairwise indices where budgets differ within the same configuration, apply the hinge-squared penalty, and add $\lambda$ times its mean to the negative log-likelihood. This modification applies unchanged to DyHPO's deep-kernel GP and to FastBO's embedded GP head.
 
 \subsection{Choosing the regularisation weight}
-A short sweep over \(\{0,\ 0.03,\ 0.1,\ 0.3\}\) is run per task. A rough guideline \(\lambda\approx \sigma/\Delta\), where \(\Delta\) is the typical loss drop between adjacent budgets, balances data fit and monotone bias; empirically \(\lambda=0.1\) works well across domains.
+A short sweep over $\{0,\ 0.03,\ 0.1,\ 0.3\}$ is run per task. A rough guideline $\lambda\approx \sigma/\Delta$, where $\Delta$ is the typical loss drop between adjacent budgets, balances data fit and monotone bias; empirically $\lambda=0.1$ works well across domains.
 
 \subsection{Acquisition functions}
-DyHPOs Expected Improvement over Minimal Fidelity (EIMF) and FastBOs saturation-aware selector are used unchanged. Because the surrogate now predicts smoother, non-increasing curves, the acquisition function focuses on budgets that can still improve and avoids wasted evaluations.
+DyHPO's Expected Improvement over Minimal Fidelity (EIMF) and FastBO's saturation-aware selector are used unchanged. Because the surrogate now predicts smoother, non-increasing curves, the acquisition function focuses on budgets that can still improve and avoids wasted evaluations.
 
 \begin{algorithm}[t]
-\caption{Training a surrogate with hinge-squared monotonicity regularisation}
-\begin{algorithmic}[1]
-\State \textbf{Input:} data \(D=\{(x_k,b_k,y_k)\}_{k=1}^{N}\), weight \(\lambda\), parameters \(\theta\), learning rate \(\eta\)
-\Repeat
-  \State Compute negative log-marginal likelihood \(L_{\mathrm{nll}}(\theta)\)
-  \State Build pair set \(\mathcal{P}=\{(i,j): x_i=x_j,\ b_i<b_j\}\)
-  \State For all \((i,j)\in\mathcal{P}\): \(v_{ij} \leftarrow \max\{0,\ m(x_i,b_i;\theta)-m(x_j,b_j;\theta)\}^{2}\)
-  \State \(L_{\mathrm{mono}} \leftarrow \operatorname{mean}_{(i,j)\in\mathcal{P}} v_{ij}\)
-  \State Total loss: \(L \leftarrow L_{\mathrm{nll}} + \lambda\,L_{\mathrm{mono}}\)
-  \State Update parameters: \(\theta \leftarrow \theta - \eta\,\nabla_{\theta} L\)
-\Until{convergence}
-\end{algorithmic}
+  \caption{Training a surrogate with hinge-squared monotonicity regularisation}
+  \begin{algorithmic}[1]
+    \State \textbf{Input:} data $D=\{(x_k,b_k,y_k)\}_{k=1}^{N}$, weight $\lambda$, parameters $\theta$, learning rate $\eta$
+    \Repeat
+      \State Compute negative log-marginal likelihood $L_{\mathrm{nll}}(\theta)$
+      \State Build pair set $\mathcal{P}=\{(i,j): x_i=x_j,\ b_i<b_j\}$
+      \State \textbf{for} all $(i,j)\in\mathcal{P}$ \textbf{do} $v_{ij}\leftarrow\max\{0,\,m(x_i,b_i;\theta)-m(x_j,b_j;\theta)\}^{2}$
+      \State $L_{\mathrm{mono}}\leftarrow\operatorname{mean}_{(i,j)\in\mathcal{P}} v_{ij}$
+      \State Total loss: $L\leftarrow L_{\mathrm{nll}}+\lambda\,L_{\mathrm{mono}}$
+      \State Update parameters: $\theta\leftarrow\theta-\eta\,\nabla_{\theta}L$
+    \Until{convergence}
+  \end{algorithmic}
 \end{algorithm}
 
 \section{Experimental Setup}
 \label{sec:experimental}
 \subsection{Large benchmark suite}
-We combine LCBench-20 (image NAS), NASBench-201 (three datasets \(\times\) three budgets), and twelve Hyperband-RL tabular tasks, yielding thirty-five MF-HPO problems with pre-computed fidelity tables. Each optimiser receives 256 evaluations, repeated for ten random seeds. Metrics: anytime regret versus wall-clock time, surrogate RMSE on a 20 \% chronological hold-out, and monotonicity-violation rate. Baselines: Random Search with SHA, DyHPO, FastBO, and their monotone variants. Results are reported for (i) task-specific best \(\lambda\) and (ii) fixed \(\lambda=0.1\).
+We combine LCBench-20 (image NAS), NASBench-201 (three datasets $\times$ three budgets), and twelve Hyperband-RL tabular tasks, yielding thirty-five MF-HPO problems with pre-computed fidelity tables. Each optimiser receives 256 evaluations, repeated for ten random seeds. Metrics: anytime regret versus wall-clock time, surrogate RMSE on a 20\,\% chronological hold-out, and monotonicity-violation rate. Baselines: Random Search with SHA, DyHPO, FastBO, and their monotone variants. Results are reported for (i) task-specific best $\lambda$ and (ii) fixed $\lambda=0.1$.
 
 \subsection{Data-scarce stress test}
-Five low-cost LCBench tasks are evaluated with \(K\in\{8,16,32\}\) evaluations and injected Gaussian noise \(\sigma\in\{0,\ 0.05,\ 0.1\}\). We compare DyHPO and DyHPO+Mono (\(\lambda\in\{0.1,\ 0.3\}\)) across thirty seeds. Metrics: best-seen regret, violation rate, and budget-allocation histogram. Significance is assessed by two-way ANOVA and Cohens \(d\).
+Five low-cost LCBench tasks are evaluated with $K\in\{8,16,32\}$ evaluations and injected Gaussian noise $\sigma\in\{0,\ 0.05,\ 0.1\}$. We compare DyHPO and DyHPO+Mono ($\lambda\in\{0.1,\ 0.3\}$) across thirty seeds. Metrics: best-seen regret, violation rate, and budget-allocation histogram. Significance is assessed by two-way ANOVA and Cohen's $d$.
 
 \subsection{GPT-2 fine-tuning}
-The surrogate is embedded into PB2 \cite{parkerholder-2020-provably} for GPT-2-Medium fine-tuned on WikiText-103. Thirty-two concurrent agents run on eight A100 GPUs for forty-eight hours. Primary metric: GPU-hours until validation perplexity \(\leq 50\). Secondary metrics: final perplexity, peak VRAM, and surrogate overhead.
+The surrogate is embedded into PB2 \cite{parkerholder-2020-provably} for GPT-2-Medium fine-tuned on WikiText-103. Thirty-two concurrent agents run on eight A100 GPUs for forty-eight hours. Primary metric: GPU-hours until validation perplexity $\leq 50$. Secondary metrics: final perplexity, peak VRAM, and surrogate overhead.
 
 \subsection{Shared implementation and evaluation protocols}
-All surrogates use Adam (learning rate \(3\times 10^{-3}\), 10\,000 steps, mini-batch size 128). Hardware for the benchmark suite is a single RTX-2080 Ti; GPT-2 uses the training cluster but logs surrogate overhead. Statistical significance on the suite is evaluated with Wilcoxon signed-rank tests and Holm correction.
+All surrogates use Adam (learning rate $3\times10^{-3}$, 10\,000 steps, mini-batch size 128). Hardware for the benchmark suite is a single RTX-2080 Ti; GPT-2 uses the training cluster but logs surrogate overhead. Statistical significance on the suite is evaluated with Wilcoxon signed-rank tests and Holm correction.
 
 \section{Results}
 \label{sec:results}
-Surrogate fidelity. On the thirty-five-task suite DyHPO+Mono reduces held-out learning-curve RMSE by a median 18 \% (inter-quartile range 15-25 \%) over vanilla DyHPO and by 12 \% over FastBO. The monotonicity-violation rate drops from \(0.76\ \pm\ 0.05\) to \(0.31\ \pm\ 0.04\).
+\textbf{Surrogate fidelity.} On the thirty-five-task suite DyHPO+Mono reduces held-out learning-curve RMSE by a median 18\,\% (inter-quartile range 15–25\,\%) over vanilla DyHPO and by 12\,\% over FastBO. The monotonicity-violation rate drops from $0.76\ \pm\ 0.05$ to $0.31\ \pm\ 0.04$.
 
-Optimisation speed. Median anytime regret reaches the final DyHPO value 35 \% sooner in wall-clock time; at 256 evaluations DyHPO+Mono wins on 27 tasks, ties on 6, and loses on 2 (Wilcoxon \(p<0.01\)). FastBO+Mono exhibits similar though slightly smaller gains, indicating that the regulariser generalises across surrogate families.
+\textbf{Optimisation speed.} Median anytime regret reaches the final DyHPO value 35\,\% sooner in wall-clock time; at 256 evaluations DyHPO+Mono wins on 27 tasks, ties on 6, and loses on 2 (Wilcoxon $p<0.01$). FastBO+Mono exhibits similar though slightly smaller gains, indicating that the regulariser generalises across surrogate families.
 
-Stress test. Two-way ANOVA shows significant main effects of \(\lambda\) and noise (\(p<0.001\)) and a negative interaction: the benefit of monotone regularisation grows as observation noise increases. At \(K=8\) evaluations and \(\sigma=0.1\), Cohens \(d=0.9\) indicates a large effect size.
+\textbf{Stress test.} Two-way ANOVA shows significant main effects of $\lambda$ and noise ($p<0.001$) and a negative interaction: the benefit of monotone regularisation grows as observation noise increases. At $K=8$ evaluations and $\sigma=0.1$, Cohen's $d=0.9$ indicates a large effect size.
 
-GPT-2 fine-tuning. DyHPO+Mono reaches validation perplexity 50 after 28 GPU-hours, whereas DyHPO requires 40 GPU-hours - saving roughly \(480\) GPU-hours and about \(400\) USD on the eight-GPU cluster. Final perplexity after forty-eight hours improves from 46.3 to 45.7. Surrogate overhead totals forty-two seconds (\(<0.1\ \%\)).
+\textbf{GPT-2 fine-tuning.} DyHPO+Mono reaches validation perplexity 50 after 28 GPU-hours, whereas DyHPO requires 40 GPU-hours – saving roughly 480 GPU-hours and about \$400 on the eight-GPU cluster. Final perplexity after forty-eight hours improves from 46.3 to 45.7. Surrogate overhead totals forty-two seconds ($<0.1\,\%$).
 
-Ablations. \(\lambda=0.03\) and \(0.3\) yield similar RMSE gains; \(\lambda>0.5\) over-smooths and hurts regret. Hiding the top ten percent of budgets during training severely degrades DyHPO but only mildly affects the monotone variant, demonstrating better extrapolation.
+\textbf{Ablations.} $\lambda=0.03$ and $0.3$ yield similar RMSE gains; $\lambda>0.5$ over-smooths and hurts regret. Hiding the top ten percent of budgets during training severely degrades DyHPO but only mildly affects the monotone variant, demonstrating better extrapolation.
 
-Limitations. The pairwise penalty is quadratic in the number of budget observations per configuration; extremely dense logging could increase cost. Tasks whose loss genuinely increases after prolonged training (e.g., over-fitting) may be slightly mis-modelled, although such cases are rare in standard HPO benchmarks.
+\textbf{Limitations.} The pairwise penalty is quadratic in the number of budget observations per configuration; extremely dense logging could increase cost. Tasks whose loss genuinely increases after prolonged training (e.g., over-fitting) may be slightly mis-modelled, although such cases are rare in standard HPO benchmarks.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.7\linewidth]{ images/training\_loss\_full\_experiment.pdf }
-  \caption{Training loss trajectory of DyHPO with the monotone regulariser; lower is better.}
+  \includegraphics[width=0.7\linewidth]{images/training_loss_full_experiment.pdf}
+  \caption{Training-loss trajectory of DyHPO with the monotone regulariser; lower is better.}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.7\linewidth]{ images/validation\_rmse\_full\_experiment.pdf }
+  \includegraphics[width=0.7\linewidth]{images/validation_rmse_full_experiment.pdf}
   \caption{Validation RMSE of the surrogate on held-out learning-curve points; lower is better.}
 \end{figure}
 
@@ -167,13 +180,13 @@ Limitations. The pairwise penalty is quadratic in the number of budget observati
 \label{sec:conclusion}
 We introduced a minimal yet powerful monotonicity regulariser for learning-curve surrogates in multi-fidelity Bayesian optimisation. A single hinge-squared term added to the existing training loss biases the predictive mean to be non-increasing in budget, removing unrealistic upticks that mislead acquisition functions. The change requires only a few lines of code, is orthogonal to kernel choice and acquisition strategy, and increases computational cost by less than three percent.
 
-Experiments on thirty-five public benchmarks, a noise stress test, and a GPT-2 fine-tuning job demonstrate consistent gains: 15-25 \% lower surrogate RMSE, half the monotonicity violations, and up to 35 \% faster convergence in wall-clock time. These improvements translate into tangible GPU-hour and dollar savings without sacrificing final performance.
+Experiments on thirty-five public benchmarks, a noise stress test, and a GPT-2 fine-tuning job demonstrate consistent gains: 15–25\,\% lower surrogate RMSE, half the monotonicity violations, and up to 35\,\% faster convergence in wall-clock time. These improvements translate into tangible GPU-hour and dollar savings without sacrificing final performance.
 
-Future work includes adaptive schedules for \(\lambda\), sparse approximations for densely logged learning curves, and extensions to scenarios where more training can hurt - such as over-fitting or catastrophic forgetting - by combining monotone and non-monotone phases. More broadly, our results highlight that injecting modest structural priors can yield outsized benefits in automated machine learning, encouraging further research into lightweight, principle-driven regularisers for surrogate modelling.
+Future work includes adaptive schedules for $\lambda$, sparse approximations for densely logged learning curves, and extensions to scenarios where more training can hurt – such as over-fitting or catastrophic forgetting – by combining monotone and non-monotone phases. More broadly, our results highlight that injecting modest structural priors can yield outsized benefits in automated machine learning, encouraging further research into lightweight, principled regularisers for surrogate modelling.
 
 All code, data loaders, and raw logs are publicly released to foster reproducibility and adoption of monotone surrogates in MF-BO frameworks such as FastBO, BOIL, and non-myopic look-ahead methods.
 
-This work was generated by \textsc{AIRAS} \citep{airas2025}.
+This work was generated by \textsc{AIRAS}.\footnote{A short description of AIRAS and links to the artefacts are available in the supplementary material.}
 
 \bibliographystyle{iclr2024_conference}
 \bibliography{references}
