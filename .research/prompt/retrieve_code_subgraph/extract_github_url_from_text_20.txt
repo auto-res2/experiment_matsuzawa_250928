@@ -1,0 +1,17 @@
+
+Input:
+# Task
+You carefully read the contents of the “Paper Outline” and select one GitHub link from the “GitHub URLs List” that you think is most relevant to the contents.
+# Constraints
+- Output the index number corresponding to the selected GitHub URL.
+- Be sure to select only one GitHub URL.
+- If there is no related GitHub link, output None.
+# Paper Outline
+The core methodology involves adapting model-agnostic meta-learning (MAML) for Gaussian processes to construct a deep kernel network (ϕ) that learns task-independent parameters (θ, w). Training is achieved by maximizing the log marginal likelihood across all source tasks using stochastic gradient ascent (SGA). A key technique is task augmentation, where labels are randomly scaled per batch to achieve invariance to offsets and ranges, circumventing traditional label normalization issues. At test time, the learned deep kernel parameters are fine-tuned on the few available data points of the target task. Bayesian optimization uses Expected Improvement (EI) as the acquisition function. The paper also proposes an evolutionary algorithm for warm-start initialization, which finds an initial set of hyperparameters by minimizing normalized regret on source tasks, using the surrogate model's predictions, and employing mutation and crossover operations.
+
+# GitHub URLs List
+['https://github.com/boschresearch/MetaBO']
+Output:
+{
+    "index": 0
+}
