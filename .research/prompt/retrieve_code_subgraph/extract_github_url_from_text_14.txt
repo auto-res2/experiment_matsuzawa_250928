@@ -1,0 +1,17 @@
+
+Input:
+# Task
+You carefully read the contents of the “Paper Outline” and select one GitHub link from the “GitHub URLs List” that you think is most relevant to the contents.
+# Constraints
+- Output the index number corresponding to the selected GitHub URL.
+- Be sure to select only one GitHub URL.
+- If there is no related GitHub link, output None.
+# Paper Outline
+PASHA extends the ASHA algorithm by incorporating a dynamic resource allocation mechanism inspired by the "doubling trick". It starts with a small initial amount of resources and progressively increases them only if the ranking of configurations in the top two rungs has not stabilized. A core component is "soft ranking," which considers configurations equivalent if their performance difference is below a threshold ϵ. This ϵ value is automatically estimated by measuring noise in rankings: it identifies pairs of configurations that repeatedly swap ranks across different resource levels (epochs) and calculates ϵ as the N-th percentile of performance differences for these "criss-crossing" pairs. PASHA uses a reduction factor η (similar to ASHA) to prune candidates and includes a user-defined maximum resource R as a safety net, beyond which it defaults to ASHA.
+
+# GitHub URLs List
+['https://github.com/ondrejbohdal/pasha']
+Output:
+{
+    "index": 0
+}
