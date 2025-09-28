@@ -1,0 +1,25 @@
+# config/full_experiment.yaml
+# Base configuration template for *real* experiments.  Dataset-/model-specific
+# placeholders must be filled in the next step.
+
+data:
+  name: DATASET_PLACEHOLDER                # PLACEHOLDER: real dataset name here
+  n_samples: SPECIFIC_CONFIG_PLACEHOLDER   # PLACEHOLDER: total number of samples
+  n_features: SPECIFIC_CONFIG_PLACEHOLDER  # PLACEHOLDER: dimensionality
+  max_budget: SPECIFIC_CONFIG_PLACEHOLDER  # PLACEHOLDER: maximum fidelity/budget
+  train_split: 0.8
+
+model:
+  hidden_dim: 128
+  output_noise: 0.01
+
+train:
+  epochs: 100
+  lr: 0.01
+
+# Monotonicity regulariser strength (λ in the paper)
+monotonicity_lambda: 0.1
+
+misc:
+  seed: 0
+  experiment_name: full_experiment
