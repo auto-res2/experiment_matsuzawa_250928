@@ -1,0 +1,17 @@
+
+Input:
+# Task
+You carefully read the contents of the “Paper Outline” and select one GitHub link from the “GitHub URLs List” that you think is most relevant to the contents.
+# Constraints
+- Output the index number corresponding to the selected GitHub URL.
+- Be sure to select only one GitHub URL.
+- If there is no related GitHub link, output None.
+# Paper Outline
+The core methodology involves training an ensemble of neural networks (scorers) to estimate the ranks of hyperparameter configurations' performances, rather than their direct performance values. A weighted list-wise L2R loss is used, prioritizing correctly ranking top-performing configurations. Uncertainty is modeled by training multiple diverse scorer networks within the ensemble, achieved by using different per-scorer seeds for mini-batch sampling. The method employs meta-learning to transfer knowledge from previous datasets, using a Deep Set architecture to extract dataset meta-features. These meta-features condition the scorers to adapt to new tasks, mitigating negative transfer. The meta-learning process involves updating both the scorer networks and the meta-feature network using separate query and support sets to enhance generalization. Bayesian Optimization then utilizes the posterior mean and variance of these estimated ranks with acquisition functions like Expected Improvement (EI), Lower Confidence Bound (UCB), or Average Rank to guide the search for optimal hyperparameters.
+
+# GitHub URLs List
+['https://github.com/releaunifreiburg/HPO-B', 'https://github.com/huawei-noah/HEBO']
+Output:
+{
+    "index": 1
+}
