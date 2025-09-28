@@ -1,0 +1,311 @@
+
+Input:
+You are an AI code reviewer specializing in validating base experiment foundations.
+
+Analyze the provided CORE experiment code (which contains placeholders for datasets/models) and determine if it implements a solid foundation that follows the base code generation requirements.
+
+# Instructions
+
+## Core Validation Criteria
+Check if the generated base code meets ALL of the following requirements:
+
+1. **Complete Core Logic Implementation**:
+   - Training loops are fully implemented (no placeholders in base training logic)
+   - Evaluation framework is complete with proper metrics calculation
+   - Model saving/loading mechanisms are implemented
+   - Result visualization and figure generation is complete
+
+2. **Proper Placeholder Strategy**:
+   - Uses clear, descriptive placeholders like `DATASET_PLACEHOLDER`, `MODEL_PLACEHOLDER`
+   - Placeholders are ONLY used for dataset-specific and model-specific components
+   - Core algorithm logic has NO placeholders
+   - Includes comments explaining what each placeholder will be replaced with
+
+3. **7-File Structure Compliance**:
+   - Contains EXACTLY these 7 required files:
+     * `src/train.py`
+     * `src/evaluate.py`
+     * `src/preprocess.py`
+     * `src/main.py`
+     * `pyproject.toml`
+     * `config/smoke_test.yaml`
+     * `config/full_experiment.yaml`
+   - No additional utility files, helper modules, or separate components
+   - All functionality is contained within the specified 7 files only
+
+4. **Command Line Interface & Module Structure**:
+   - main.py properly supports `--smoke-test` and `--full-experiment` flags
+   - Configuration system can handle different experimental scenarios
+   - Proper command-line argument parsing
+   - Import statements are compatible with `uv run python -m src.main` execution (relative imports like `from .train import train` are valid even without `src/__init__.py`)
+
+5. **Publication-Ready Infrastructure**:
+   - Figure generation with proper formatting (PDF output, legends, annotations)
+   - Figures are saved in `.research/iteration1/images/` directory
+   - Results saved as JSON files in `.research/iteration1/` directory with stdout printing
+   - Consistent result formatting and comparison logic
+   - Proper experimental description output
+
+6. **PyTorch Framework Usage**:
+   - Uses PyTorch exclusively for deep learning components
+   - Proper model definition and training patterns
+   - Appropriate use of existing Python libraries
+
+7. **No Premature Specialization**:
+   - Does NOT assume specific datasets or models (uses placeholders appropriately)
+   - Does NOT contain real dataset loading code (should be placeholder)
+   - Focuses on base algorithm and evaluation framework
+
+## Output Format
+Respond with a JSON object containing:
+- `is_base_code_ready`: boolean - true if ALL base criteria are met, false otherwise
+- `base_code_issue`: string - specific issues found if any criteria are not met, focusing on base foundation quality
+
+# Current Research Method
+{
+    "Open Problems": "Multi-fidelity HPO methods that exploit learning-curves (e.g. DyHPO, FastBO) fit a surrogate that jointly models configuration and budget.  Because the surrogate is learned purely by maximising (log-)marginal likelihood, the predicted mean curves are often non-monotone w.r.t. the budget, especially when only a few noisy points are available.  Non-monotone predictions mislead the acquisition function and waste evaluations on obviously inferior budgets.",
+    "Methods": "We add a simple monotonicity regulariser to the surrogate training objective.\n1. Let m(x,b;θ) be the surrogate mean for configuration x at budget b.\n2. For every pair of observations (x,b_i),(x,b_j) with b_i<b_j in the training set build a penalty term\n   L_mono(θ)=∑_{(x,b_i<b_j)} ReLU(m(x,b_i;θ)-m(x,b_j;θ))^2.\n3. The new training loss becomes\n      L(θ)= -log p(y|θ)  + λ·L_mono(θ) ,   λ>0.\n   (λ≈0.1 works well and is the only extra hyper-parameter.)\n4. Everything else – kernel, deep feature extractor, acquisition function (EIMF) – is left unchanged.  The extra term is differentiable so DyHPO’s Adam optimiser needs only one extra backward call.\n\nIntuition: the hinge-squared penalty softly enforces m(x,b) to be non-decreasing in b, reflecting the fact that additional training never hurts in expectation.  This yields smoother, more realistic curves and makes the acquisition function focus on budgets that can still improve.",
+    "Experimental Setup": "Base method   : DyHPO (official implementation).\nDatasets      : 5 LCBench neural–network tasks where DyHPO’s overhead was reported to outweigh its benefit (training time per epoch <0.2 s).\nBudgets       : Original 1…50 epochs.\nBaselines     : (a) Random Search (RS), (b) DyHPO, (c) DyHPO+Mono (ours).\nMetric        : Anytime regret (lower is better) vs wall-clock time; RMSE between predicted and true learning curves on a 20 % validation split.\nProtocol      : 10 independent runs, 256 total budgeted evaluations each; identical seeds across methods.\nλ-sweep       : try λ∈{0,0.03,0.1,0.3}; report best.\nHardware      : single RTX-2080 Ti; run time <2 hours.",
+    "Experimental Code": "# --- key patch for DyHPO surrogate -----------------------------------------\nclass DyHPO(nn.Module):\n    ...\n    def loss(self, X,budget,curve, y):\n        \"\"\"compute -log marginal likelihood (mll) + monotone penalty\"\"\"\n        output = self.gp(X,budget,curve)           # unchanged\n        nll = -self.mll(output, y)\n        # --------- monotonicity penalty ---------\n        m_pred = output.mean                         # (N,)\n        b = budget.squeeze()                          # budgets used\n        # build pairwise indices with b_i<b_j\n        idx_i, idx_j = torch.triu_indices(len(b), len(b), offset=1)\n        mask = b[idx_i] < b[idx_j]\n        diff = m_pred[idx_i[mask]] - m_pred[idx_j[mask]]\n        mono_pen = torch.relu(diff).pow(2).mean()\n        return nll + self.lam * mono_pen\n# ---------------------------------------------------------------------------\n# training loop   (same as DyHPO)\nmodel.lam = 0.1   # one line to activate regulariser",
+    "Expected Result": "1. Learning-curve RMSE ↓ 15-25 % compared to vanilla DyHPO on all five tasks.\n2. Anytime regret: DyHPO+Mono reaches the final performance of vanilla DyHPO with ≈35 % less wall-clock time and beats Random Search throughout.\n3. With λ∈[0.03,0.3] results are stable; λ=0 reproduces vanilla DyHPO.\n4. Training overhead is <3 % (extra backward pass).",
+    "Expected Conclusion": "A tiny, architecture-agnostic hinge penalty that encourages surrogate means to be non-decreasing in the budget removes unrealistically falling learning-curve predictions.  The acquisition function can therefore spend fewer evaluations on obviously saturated budgets, giving faster convergence at negligible computational cost.  Because the change touches only the loss function, it can be dropped into any learning-curve–aware BO method (FastBO, BOIL, etc.) with minimal engineering effort."
+}
+
+# Experimental Design
+
+## Experiment Strategy
+Experiment 1 – Large-scale Benchmark Suite
+Objective: Show that the monotone regulariser improves optimisation speed and final regret across a wide spectrum of neural-architecture and tabular MF-HPO benchmarks.
+
+Design
+1. Benchmarks
+   • LCBench-20 (all 20 tasks, not just 5)  
+   • NASBench-201 (3 image datasets, 3 budgets: 25, 50, 100 epochs)  
+   • Tabular RL domain (Hyperband-RL, 12 tasks)  
+   In total 35 tasks that differ in cost, noise and degree of curve monotonicity.
+2. Methods  
+   a) Random Search + SHA  
+   b) DyHPO (original)  
+   c) DyHPO + Mono (ours)  
+   d) FastBO, FastBO + Mono (tests plug-in ease) 
+3. Budgets: 256 evaluations / task, identical seeds.
+4. Metrics  
+   • Anytime regret versus wall-clock  
+   • Final best regret after 256 evals  
+   • RMSE of learning-curve predictions  
+   • % of surrogate violations (m(x,b_i)>m(x,b_j) for b_i<b_j)
+5. Infrastructure: one A100 per task; tasks run in parallel on 8 GPUs.
+
+Expected Outcome  
+• DyHPO+Mono cuts median time-to-target regret by 30–40 % on ≥80 % of tasks.  
+• Final regret improves by ≈5 % on average; never worse than DyHPO.  
+• Learning-curve RMSE ↓20 % and violation rate ↓85 %.  
+• FastBO gains similar improvements, proving drop-in applicability.
+
+Demonstrates: General, statistically significant benefit, negligible overhead, and method portability.
+
+––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+Experiment 2 – Data-scarce & Noisy Regime Stress Test
+Objective: Verify that monotone regularisation is most beneficial when only few, noisy observations are available—the regime where non-monotone surrogates mislead BO the most.
+
+Design
+1. Use 5 LCBench tasks with artificially restricted observation budgets: allow only K∈{8,16,32} total evaluations.  
+2. Inject synthetic Gaussian noise σ∈{0.0,0.05,0.1} into reported validation errors to emulate stochastic training.
+3. Compare DyHPO vs DyHPO+Mono; 30 random seeds for statistical power.
+4. Metrics:  
+   – Mean ± 95 % CI of best-seen regret after K evals  
+   – Surrogate monotonicity violation count  
+   – Acquisition‐induced budget distribution (how often low/high budgets are selected)
+
+Expected Outcome  
+• At K=8, DyHPO+Mono achieves the same regret DyHPO reaches at K=16 (>50 % sample efficiency gain).  
+• Violation count per task drops from ~14 to <2.  
+• Acquisition shifts 20–30 % of evaluations from saturated high budgets to informative mid-range budgets.
+
+Demonstrates: The regulariser directly tackles the core failure mode (non-monotone prediction) and is especially valuable when data are scarce and noisy.
+
+––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+Experiment 3 – Real-world Large-Model Training Cost Saving
+Objective: Quantify actual GPU-hour savings on a costly task where every additional epoch is expensive.
+
+Design
+1. Task: Fine-tune a 350 M parameter Transformer on WikiText-103 (budget = training epochs 1…15).  
+2. Scheduler: Population-based HS+BO (PB2) wrapper that queries a surrogate to decide which agents get extra epochs. Replace surrogate with (a) DyHPO, (b) DyHPO+Mono.  
+3. 8 A100s run 32 agents in parallel; wall-clock limited to 48 h.  
+4. Metrics  
+   • Best validation perplexity after 48 h  
+   • Total GPU-hours consumed to reach perplexity ≤ 50.  
+   • Surrogate training overhead.
+
+Expected Outcome  
+• DyHPO+Mono reaches perplexity 50 in ≈28 h vs 40 h for DyHPO (≈30 % GPU-hour saving).  
+• Final perplexity after 48 h improved by ~1.2 points.  
+• Additional surrogate training time <1 % of wall-clock.
+
+Demonstrates: The proposed regulariser translates into tangible cost savings on industrial-scale workloads, highlighting practical impact beyond tabular benchmarks.
+
+## Experiment Details
+============================================================
+EXPERIMENT 1 – LARGE–SCALE BENCHMARK SUITE
+============================================================
+Goal  Demonstrate the generality and portability of the monotone-regularised surrogate on 35 heterogeneous MF-HPO tasks.
+
+A. Benchmarks
+   1. LCBench-20                          : 20 image-classification NAS tasks (CIFAR-10/100, Fashion-MNIST, SVHN …)
+   2. NASBench-201                        : 3 datasets (CIFAR-10, CIFAR-100, ImageNet-16-120) × budgets {25,50,100} epochs
+   3. Hyperband-RL Tabular Suite  : 12 RL-policy optimisation tasks released with Eti, Kadioglu & Tierney (2022)
+      Total → 35 tasks; all are public and come with pre-computed fidelity tables (no simulator needed → reproducible, cheap validation).
+
+B. Methods & Surrogates
+   • RS+SHA                (Baseline, no surrogate)
+   • DyHPO                 (Deep-kernel GP, variational inference)
+   • DyHPO + Mono    (ours; same kernel, λ swept)
+   • FastBO                 (Tree-ensemble surrogate)
+   • FastBO + Mono    (Tree-ensemble + isotonic regression penalty*).
+      *For FastBO we wrap the monotone regulariser around the last linear layer of its embedded GP-head; code provided.
+
+C. Data & Pre-processing
+   • Each benchmark already stores validation / test error per configuration & epoch.  We follow official loaders.
+   • Normalise objective to y ← (y − y₀)/(y_max − y_min) per task to stabilise GP likelihood.
+   • Budgets re-indexed to [1, B] where B is task-specific maximum (#epochs or steps).
+
+D. Splitting & Seeds
+   • 256 BO evaluations per task.
+   • Ten independent repetitions (seeds = {0,…,9}); identical seeds across all methods → paired tests.
+   • Within each repetition, 20 % of observations are held-out (chronologically) for monitoring surrogate RMSE, never shown to BO.
+
+E. Hyper-parameters & Repetitions
+   • λ∈{0, 0.03, 0.1, 0.3}.  For each task we pick the λ that minimises validation RMSE averaged over seeds.*  Report both “best-val” and “λ=0.1 fixed”.
+   • Surrogate optimiser: Adam (lr = 3e-3, 10 k steps), mini-batch size = 128 pairs.
+
+F. Evaluation Metrics
+   Primary   Anytime regret vs wall-clock (↓) – median ± IQR across seeds.
+   Secondary  (1) Final regret at 256 evals     (2) Learning-curve RMSE on held-out
+              (3) Monotonicity-violation rate   (4) GPU time / memory / FLOPs.
+
+G. Robustness & Ablations
+   • Noise-flip test: randomly flip 5 % of logged fidelities – measure Δregret.
+   • OOD-budget shift: hide top 10 % budgets at train-time, query acquisition there at test.
+   • Hyper-param sweep: sensitivity curves for λ, learning rate, GP length-scale.
+
+H. Computational Accounting (per task, A100)
+   • DyHPO        ≈ 1.9×10¹¹ FLOPs   15.1 GB
+   • DyHPO+Mono  ≈ 1.95×10¹¹ FLOPs 15.3 GB (+2.6 %)
+   • End-to-end wall-clock  ≈ 2.3 h (LCBench) … 3.6 h (Hyperband-RL)
+   • Eight GPUs in parallel → total grid < 120 GPU-hours.
+
+I. Example Code Snippet (DyHPO patch)  ▶ identical to proposal, placed in dyhpo/surrogate.py
+
+J. Statistical Tests
+   • Pairwise Wilcoxon signed-rank (α = 0.05, Holm correction) on final regret.
+   • Report win/tie/loss counts over 35 tasks.
+
+============================================================
+EXPERIMENT 2 – DATA-SCARCE & NOISY REGIME STRESS TEST
+============================================================
+Goal  Validate that monotone regularisation yields the largest benefit when the surrogate is trained on few, noisy points.
+
+A. Benchmark & Noise Injection
+   • 5 LCBench tasks with lowest per-epoch cost (CIFAR-10-WRN, SVHN-ResNet …)
+   • Observation budget K ∈ {8, 16, 32} evaluations.
+   • Add zero-mean Gaussian noise σ ∈ {0, 0.05, 0.10} to objective before passing to surrogate/acquisition (ground-truth kept for regret calc).
+
+B. Methods
+   • DyHPO vs DyHPO+Mono (λ = 0.1, 0.3)
+   • 30 repetitions (seeds 0 – 29)
+
+C. Metrics
+   1. Best-seen regret (mean ± 95 % t-CI) after K evals
+   2. #Monotonicity violations / #pairwise checks
+   3. Budget-allocation histogram (low <½B, mid ½B–¾B, high ≥¾B)
+
+D. Robustness Checks
+   • Repeat experiment with Poisson noise (λ = 0.05) to rule out distributional assumptions.
+
+E. Statistical Analysis
+   • Two-way ANOVA (factors = λ and σ) on regret.
+   • Effect size (Cohen’s d) for K = 8.
+
+F. Compute Foot-print
+   • Negligible (<1 GPU-hour) – runs on one A100.
+
+============================================================
+EXPERIMENT 3 – REAL-WORLD LARGE-MODEL COST SAVING
+============================================================
+Goal  Show GPU-hour and dollar savings on an expensive Transformer fine-tuning job.
+
+A. Task & Dataset
+   • Model              GPT-2-Medium (355 M params, HF transformers==4.39)
+   • Dataset            WikiText-103 (≈ 103 M tokens)
+   • Budget             Training epochs b ∈ {1, …, 15}
+   • Tokeniser          Byte-level BPE, 50257 vocab.
+   • Pre-processing     As in HF example: lowercase, strip accents, chunk to 1024-token blocks.
+   • Splits             official train/valid/test (no subsampling).
+
+B. Optimisation Framework
+   • Population-Based Training with BO scheduler (PB2)
+   • 32 concurrent agents (batch-size 4, gradient-accum 4 → eff. 16) across 8×A100.
+   • Surrogate in PB2:
+        (a) DyHPO (baseline)
+        (b) DyHPO + Mono (λ=0.1)
+   • Control knobs = {lr ∈ [3e-5, 1e-4], weight-decay ∈ [0.0, 0.1], dropout ∈ [0.0, 0.2]}
+
+C. Protocol & Seeds
+   • 48 h wall-clock cap.
+   • Same random seed for data-loader across both runs.
+   • Three full repetitions (seeds = 0,1,2) → 6 total PB2 runs.
+
+D. Metrics
+   Primary     GPU-hours until validation perplexity ≤ 50.
+   Secondary   Final perplexity at 48 h, peak VRAM, surrogate overhead (sec), FLOPs.*
+   *FLOPs computed via ptflops per forward+backward and multiplied by #tokens.
+
+E. Early-Stopping & Check-pointing
+   • Stop agents that remain >15 perplexity points worse than leader for >4 evals.
+   • Best-val checkpoint saved; last checkpoint also archived for robustness analysis.
+
+F. Robustness / Domain-Shift
+   • After 48 h, freeze the best model and evaluate on BookCorpus-Open (OOD text) → perplexity reported.
+
+G. Cost Calculation
+   • Azure ND-A100 v4 price: 4.10 USD/GPU-hour → expected saving ≈ (40−28)×8×4.10 ≈ $400 per run.
+
+H. Example Scheduler Code (excerpt)
+   ```python
+   from ray import tune
+   from ray.tune.schedulers.pb2 import PB2
+   from dyhpo_surrogate import DyHPOSurrogate
+   surrogate = DyHPOSurrogate(monotone=True, lam=0.1)
+   pb2 = PB2( time_attr='training_iteration', metric='val_ppl', mode='min',
+              perturbation_interval=1,  # epoch
+              hyperparam_bounds={ 'lr':[3e-5,1e-4], 'weight_decay':[0.0,0.1],
+                                   'dropout':[0.0,0.2]},
+              surrogate_model=surrogate )
+   tune.run(train_gpt2, resources_per_trial={'gpu':1}, num_samples=32,
+            scheduler=pb2, stop={'time_total_s': 48*3600})
+   ```
+
+============================================================
+SHARED COMPONENTS (applies to all experiments)
+============================================================
+1. Hyper-parameter Importance Analysis
+   • fANOVA on λ, GP length-scale, kernel variance.
+   • Partial dependence plots.
+2. Memory Tracking        nvidia-smi --query-timestamp,index,utilization.gpu,memory.used --loop=5
+3. FLOP Counting         ptflops or fvcore; verified against Nsight Compute.
+4. Reproducibility       All code + Conda env.yaml released; random seeds and raw logs stored.
+5. Error Handling        If dataset download fails → raise FileNotFoundError and abort run (NO-FALLBACK).
+
+
+
+# Generated Base Code Files
+{"evaluate_py": "\"\"\"src/evaluate.py\nUniversal evaluation \u0026 visualisation framework.  Works out-of-the-box for\nany surrogate + dataset combination that respects the common interface:\n    \u2013 model / likelihood as produced by train_surrogate\n    \u2013 dataset __getitem__ \u2192 (features, budget, target)\nThe module:\n    1. computes standard metrics (RMSE, monotonicity violation rate)\n    2. generates publication-ready figures (.pdf) stored under\n       .research/iteration1/images/\n    3. saves metrics JSON under .research/iteration1/\n        (the file is fully self-contained \u2013 contains config \u0026 metrics)\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport time\nfrom typing import Dict, List\n\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nimport torch\nfrom torch.utils.data import DataLoader, Dataset\n\nfrom .train import monotonicity_penalty\n\nsns.set(style=\"whitegrid\", context=\"paper\", font_scale=1.3)\n\n# -----------------------------------------------------------------------------\n#                                 METRICS\n# -----------------------------------------------------------------------------\n\ndef _rmse(pred: torch.Tensor, target: torch.Tensor) -\u003e float:\n    return torch.sqrt(torch.mean((pred - target) ** 2)).item()\n\n\ndef _monotonicity_violation_rate(pred: torch.Tensor, budgets: torch.Tensor) -\u003e float:\n    \"\"\"Return fraction of violating pairs (lower is better).\"\"\"\n    idx_i, idx_j = torch.triu_indices(len(budgets), len(budgets), offset=1)\n    mask = budgets[idx_i] \u003c budgets[idx_j]\n    if mask.sum() == 0:\n        return 0.0\n    diff = pred[idx_i[mask]] - pred[idx_j[mask]]\n    violations = (diff \u003c 0).float().sum()\n    return (violations / mask.sum()).item()\n\n# -----------------------------------------------------------------------------\n#                                FIGURES\n# -----------------------------------------------------------------------------\n\ndef _annotate_line(ax, x_data: List[float], y_data: List[float]):\n    for x, y in zip(x_data, y_data):\n        ax.annotate(f\"{y:.2f}\", (x, y), textcoords=\"offset points\", xytext=(0, 5), ha=\"center\", fontsize=6)\n\n\ndef _annotate_scatter(ax, x_data: torch.Tensor, y_data: torch.Tensor):\n    for i in range(len(x_data)):\n        ax.annotate(f\"{y_data[i]:.2f}\", (x_data[i], y_data[i]), textcoords=\"offset points\", xytext=(3, 3), fontsize=5)\n\n\n# -----------------------------------------------------------------------------\n#                             EVALUATION API\n# -----------------------------------------------------------------------------\n\ndef evaluate(\n    cfg: Dict,\n    model,  # gpytorch model\n    likelihood,  # gpytorch likelihood\n    dataset: Dataset,\n    training_losses: List[float],\n    result_dir: str,\n) -\u003e Dict:\n    device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\n\n    model.eval()\n    likelihood.eval()\n\n    # Collect full validation dataset in memory (small-to-medium size only).\n    features_list, budget_list, target_list = [], [], []\n    for feat, bud, tgt in DataLoader(dataset, batch_size=len(dataset)):\n        features_list.append(feat)\n        budget_list.append(bud)\n        target_list.append(tgt)\n    X_val = torch.cat([features_list[0], budget_list[0]], dim=-1).to(device)\n    y_val = target_list[0].to(device)\n    budgets_val = budget_list[0].to(device)\n\n    with torch.no_grad(), torch.cuda.amp.autocast(enabled=False):\n        preds = model(X_val).mean.cpu()\n\n    rmse = _rmse(preds, y_val.cpu())\n    violation_rate = _monotonicity_violation_rate(preds, budgets_val.cpu())\n\n    metrics = {\n        \"rmse\": rmse,\n        \"monotonicity_violation_rate\": violation_rate,\n        \"n_val\": len(dataset),\n    }\n\n    # ---------------------------------------------------------------------\n    #                            FIGURE 1 \u2013 TRAINING LOSS\n    # ---------------------------------------------------------------------\n    os.makedirs(os.path.join(result_dir, \"images\"), exist_ok=True)\n    fig1, ax1 = plt.subplots(figsize=(4, 3))\n    epochs = list(range(1, len(training_losses) + 1))\n    ax1.plot(epochs, training_losses, marker=\"o\")\n    _annotate_line(ax1, epochs, training_losses)\n    ax1.set_xlabel(\"Epoch\")\n    ax1.set_ylabel(\"Training Loss\")\n    ax1.set_title(\"GP Training Loss Curve\")\n    ax1.legend([\"Loss\"], loc=\"best\")\n    fig1.tight_layout()\n    loss_fig_name = \"training_loss.pdf\"\n    loss_fig_path = os.path.join(result_dir, \"images\", loss_fig_name)\n    fig1.savefig(loss_fig_path, bbox_inches=\"tight\", format=\"pdf\")\n    plt.close(fig1)\n\n    # ---------------------------------------------------------------------\n    #                    FIGURE 2 \u2013 PREDICTED vs TRUE\n    # ---------------------------------------------------------------------\n    fig2, ax2 = plt.subplots(figsize=(4, 4))\n    sns.scatterplot(x=y_val.cpu().numpy(), y=preds.numpy(), ax=ax2, s=20)\n    ax2.set_xlabel(\"True\")\n    ax2.set_ylabel(\"Predicted\")\n    _annotate_scatter(ax2, y_val.cpu(), preds)\n    lims = [min(ax2.get_xlim()[0], ax2.get_ylim()[0]), max(ax2.get_xlim()[1], ax2.get_ylim()[1])]\n    ax2.plot(lims, lims, \"k--\", alpha=0.75, linewidth=1)\n    ax2.set_title(\"Prediction Quality (Validation)\")\n    fig2.tight_layout()\n    pred_fig_name = \"prediction_vs_true.pdf\"\n    pred_fig_path = os.path.join(result_dir, \"images\", pred_fig_name)\n    fig2.savefig(pred_fig_path, bbox_inches=\"tight\", format=\"pdf\")\n    plt.close(fig2)\n\n    metrics[\"figures\"] = [loss_fig_name, pred_fig_name]\n\n    # ---------------------------------------------------------------------\n    #                        SAVE METRICS JSON\n    # ---------------------------------------------------------------------\n    ts = int(time.time())\n    json_path = os.path.join(result_dir, f\"results_{ts}.json\")\n    with open(json_path, \"w\", encoding=\"utf-8\") as fp:\n        json.dump({\"config\": cfg, \"metrics\": metrics}, fp, indent=2)\n\n    return metrics\n", "full_experiment_yaml": "# config/full_experiment.yaml\n# This template will be filled with actual dataset/model combinations in\n# the next step of the project.  Core infrastructure remains unchanged.\n\nexperiment_name: DATASET_PLACEHOLDER_experiment\nseed: 0\n\ndataset:\n  name: DATASET_PLACEHOLDER  # PLACEHOLDER: replace with actual dataset name, e.g. LCBENCH\n  path: DATA_PATH_PLACEHOLDER  # PLACEHOLDER: local or remote path\n  other_args: SPECIFIC_CONFIG_PLACEHOLDER\n\ntraining:\n  epochs: 100  # adjust per dataset size\n  lr: 0.01\n  lam: 0.1  # monotonicity regulariser weight (can be \u03bb-swept)\n  batch_size: 1024  # will be ignored for exact GP; used for SVGP variants\n  weight_decay: 0.0\n\nevaluation:\n  metrics:\n    - rmse\n    - monotonicity_violation_rate\n    - anytime_regret  # implemented for tasks that provide running best-of history\n\n# Additional placeholders for model specifics\nmodel:\n  name: MODEL_PLACEHOLDER  # e.g. DyHPO, FastBO, etc.\n  hyperparams: SPECIFIC_CONFIG_PLACEHOLDER\n\nhardware:\n  device: auto  # auto \u2011\u003e use CUDA if available, else CPU\n  num_gpus: 1\n\nnotes: |\n  This is a base configuration. Replace PLACEHOLDER fields with concrete\n  values for each experimental variant. The common core framework will\n  remain unchanged. Use the same field names across all configurations to\n  ensure compatibility.\n\n# End of template\n", "main_py": "\"\"\"src/main.py\nMain executable entry-point.  Provides a unified CLI:\n    uv run python -m src.main --smoke-test\n    uv run python -m src.main --full-experiment\nIn addition, arbitrary configuration files can be supplied via\n    python -m src.main --config path/to/your.yaml\n\"\"\"\nfrom __future__ import annotations\n\nimport argparse\nimport datetime as dt\nimport os\nimport sys\nimport textwrap\nfrom pathlib import Path\nfrom typing import Dict\n\nimport yaml\n\n# Ensure relative imports work when executed as `-m src.main`\nPACKAGE_DIR = Path(__file__).resolve().parent\nPROJECT_ROOT = PACKAGE_DIR.parent\nsys.path.append(str(PROJECT_ROOT))  # noqa: E402 \u2013 after sys.path manipulation\n\nfrom .preprocess import load_dataset  # noqa: E402\nfrom .train import train_surrogate  # noqa: E402\nfrom .evaluate import evaluate  # noqa: E402\n\n# -----------------------------------------------------------------------------\n#                            HELPER FUNCTIONS\n# -----------------------------------------------------------------------------\n\ndef _load_yaml(path: str | Path) -\u003e Dict:\n    with open(path, \"r\", encoding=\"utf-8\") as fp:\n        return yaml.safe_load(fp)\n\n\n# -----------------------------------------------------------------------------\n#                                    CLI\n# -----------------------------------------------------------------------------\n\ndef parse_args():\n    parser = argparse.ArgumentParser(description=\"COMMON CORE FOUNDATION \u2013 Experiment Runner\")\n    group = parser.add_mutually_exclusive_group(required=True)\n    group.add_argument(\"--smoke-test\", action=\"store_true\", help=\"Run quick synthetic dataset test.\")\n    group.add_argument(\"--full-experiment\", action=\"store_true\", help=\"Run full experiment defined in config/full_experiment.yaml\")\n    group.add_argument(\"--config\", type=str, help=\"Path to custom YAML configuration file.\")\n    return parser.parse_args()\n\n# -----------------------------------------------------------------------------\n#                                MAIN LOGIC\n# -----------------------------------------------------------------------------\n\ndef main():\n    args = parse_args()\n\n    if args.smoke_test:\n        cfg_path = PROJECT_ROOT / \"config\" / \"smoke_test.yaml\"\n    elif args.full_experiment:\n        cfg_path = PROJECT_ROOT / \"config\" / \"full_experiment.yaml\"\n    else:\n        cfg_path = Path(args.config)\n    cfg = _load_yaml(cfg_path)\n\n    # ---------------------------------------------------------------------\n    #                   DIRECTORY PREPARATION \u0026 DESCRIPTION\n    # ---------------------------------------------------------------------\n    result_root = PROJECT_ROOT / \".research\" / \"iteration1\"\n    result_root.mkdir(parents=True, exist_ok=True)\n    (result_root / \"images\").mkdir(exist_ok=True)\n\n    exp_desc = textwrap.dedent(\n        f\"\"\"\n        =============================================================\n        COMMON CORE FOUNDATION \u2013 Experiment\n        Timestamp: {dt.datetime.now().isoformat()}\n        Configuration Loaded: {cfg_path}\n        =============================================================\n        \"\"\"\n    )\n    print(exp_desc)\n\n    # ---------------------------------------------------------------------\n    #                             PIPELINE\n    # ---------------------------------------------------------------------\n    train_ds, val_ds = load_dataset(cfg)\n\n    device = \"cuda\" if cfg.get(\"device\", \"auto\") == \"auto\" and os.environ.get(\"CUDA_VISIBLE_DEVICES\") else \"cpu\"\n\n    training_output = train_surrogate(cfg[\"training\"], train_ds, device=device)\n\n    metrics = evaluate(cfg, training_output.model, training_output.likelihood, val_ds,\n                       training_output.training_losses, str(result_root))\n\n    # ---------------------------------------------------------------------\n    #                       STANDARD OUTPUT OF RESULTS\n    # ---------------------------------------------------------------------\n    print(\"\\nExperiment Results (JSON):\")\n    print(metrics)\n\n    print(\"\\nFigures generated and saved under .research/iteration1/images/:\")\n    for fig in metrics[\"figures\"]:\n        print(\" \u2013\", fig)\n\n\nif __name__ == \"__main__\":\n    main()\n", "preprocess_py": "\"\"\"src/preprocess.py\nCommon preprocessing \u0026 dataset loading utilities.\nDataset specific logic can be plugged-in later by replacing the\nPLACEHOLDER functions.  For now, a fully functional *SMOKE_SYNTHETIC*\nloader is provided so the entire pipeline can be smoke-tested without any\nexternal data.\n\"\"\"\nfrom __future__ import annotations\n\nimport math\nimport random\nfrom typing import Dict, Tuple\n\nimport numpy as np\nimport torch\nfrom sklearn.preprocessing import MinMaxScaler\nfrom torch.utils.data import Dataset\n\n# ------------------------------   D A T A S E T -----------------------------\n\nclass SurrogateDataset(Dataset):\n    \"\"\"Lightweight container expected by train/evaluate.\"\"\"\n\n    def __init__(self, X: torch.Tensor, budgets: torch.Tensor, y: torch.Tensor):\n        super().__init__()\n        assert X.shape[0] == y.shape[0] == budgets.shape[0]\n        self.X = X.float()\n        self.budgets = budgets.float().unsqueeze(-1)  # shape (N,1) for concat\n        self.y = y.float()\n\n    def __len__(self):\n        return self.X.shape[0]\n\n    def __getitem__(self, idx: int):\n        return self.X[idx], self.budgets[idx], self.y[idx]\n\n# -----------------------------------------------------------------------------\n#                            DATA-LOADING LOGIC\n# -----------------------------------------------------------------------------\n\ndef _load_smoke_synthetic(cfg: Dict) -\u003e Tuple[SurrogateDataset, SurrogateDataset]:\n    \"\"\"Generate a synthetic monotone dataset for smoke-test purposes.\"\"\"\n    rng = np.random.default_rng(seed=cfg.get(\"seed\", 0))\n    n_cfg = cfg.get(\"n_configs\", 10)\n    n_budgets = cfg.get(\"n_budgets\", 5)\n\n    # Features for configurations (dim=5)\n    config_feats = rng.uniform(0, 1, size=(n_cfg, 5))\n\n    X_list, budget_list, y_list = [], [], []\n    noise_std = cfg.get(\"noise\", 0.01)\n    for i in range(n_cfg):\n        for b in range(1, n_budgets + 1):\n            feat = config_feats[i]\n            budget = b  # scalar\n            # Ground truth \u2013 decreasing in budget\n            base = math.sin(feat.sum()) + 2.0\n            y = base / budget + rng.normal(0, noise_std)\n            X_list.append(feat)\n            budget_list.append(budget)\n            y_list.append(y)\n\n    X_arr = np.vstack(X_list).astype(np.float32)\n    budgets_arr = np.array(budget_list, dtype=np.float32)\n    y_arr = np.array(y_list, dtype=np.float32)\n\n    # Normalise targets \u21a6 [0,1] as recommended for GPs\n    scaler = MinMaxScaler()\n    y_arr = scaler.fit_transform(y_arr.reshape(-1, 1)).squeeze()\n\n    # Train-val split (chronological to mimic BO schedule)\n    split_idx = int(0.8 * len(y_arr))\n    train_ds = SurrogateDataset(torch.from_numpy(X_arr[:split_idx]),\n                                torch.from_numpy(budgets_arr[:split_idx]),\n                                torch.from_numpy(y_arr[:split_idx]))\n    val_ds = SurrogateDataset(torch.from_numpy(X_arr[split_idx:]),\n                              torch.from_numpy(budgets_arr[split_idx:]),\n                              torch.from_numpy(y_arr[split_idx:]))\n    return train_ds, val_ds\n\n\ndef _load_placeholder_dataset(_: Dict):\n    \"\"\"PLACEHOLDER: Will be replaced with specific dataset loading logic.\"\"\"\n    raise NotImplementedError(\"Dataset loader placeholder \u2013 replace in next phase.\")\n\n# -----------------------------------------------------------------------------\n#                                PUBLIC API\n# -----------------------------------------------------------------------------\n\ndef load_dataset(cfg: Dict):\n    \"\"\"Factory to load dataset specified in YAML config.\n\n    Returns\n    -------\n    Tuple[Dataset, Dataset]\n        train_ds, val_ds \u2013 each obeying SurrogateDataset interface.\n    \"\"\"\n    name = cfg[\"dataset\"][\"name\"].upper()\n    if name == \"SMOKE_SYNTHETIC\":\n        return _load_smoke_synthetic(cfg[\"dataset\"])\n\n    # ------------------------------------------------------------------\n    #  PLACEHOLDER \u2192 add new dataset branches here in subsequent steps\n    # ------------------------------------------------------------------\n    return _load_placeholder_dataset(cfg)\n", "pyproject_toml": "[build-system]\nrequires = [\"setuptools\u003e=61.0\"]\nbuild-backend = \"setuptools.build_meta\"\n\n[project]\nname = \"common-core-foundation\"\nversion = \"0.1.0\"\ndescription = \"Reusable experimental foundation for monotone-regularised MF-HPO experiments\"\nrequires-python = \"\u003e=3.9\"\nauthors = [\n    {name = \"AI Researcher\", email = \"research@example.com\"}\n]\nlicense = {text = \"Apache-2.0\"}\n\n[project.dependencies]\ntorch = \"\u003e=2.0\"\ngpytorch = \"^1.11\"\npyyaml = \"^6.0\"\nmatplotlib = \"^3.8\"\nseaborn = \"^0.13\"\nscikit-learn = \"^1.4\"\ntqdm = \"^4.66\"\n", "smoke_test_yaml": "# config/smoke_test.yaml\n\nexperiment_name: smoke_test_synthetic\nseed: 0\n\n# ---------------- DATASET ----------------\ndataset:\n  name: SMOKE_SYNTHETIC\n  n_configs: 10\n  n_budgets: 5\n  noise: 0.01\n  seed: 0\n\n# --------------- TRAINING ---------------\ntraining:\n  epochs: 30\n  lr: 0.05\n  lam: 0.1  # monotonicity strength\n\n# -------------- EVALUATION --------------\nevaluation:\n  metrics:\n    - rmse\n    - monotonicity_violation_rate\n", "train_py": "\"\"\"src/train.py\nCore training logic implementing DyHPO-style GP surrogate with a\nmonotonicity regulariser.  Dataset/model specific parts are abstracted\nbehind clearly marked placeholders so they can be replaced later\nwithout touching the core training loop.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport time\nfrom dataclasses import dataclass\nfrom typing import Dict, List, Tuple\n\nimport gpytorch\nimport torch\nfrom gpytorch.kernels import RBFKernel, ScaleKernel\nfrom gpytorch.likelihoods import GaussianLikelihood\nfrom gpytorch.means import ConstantMean\nfrom gpytorch.mlls import ExactMarginalLogLikelihood\nfrom torch.utils.data import DataLoader, Dataset\nfrom tqdm import tqdm\n\n# -----------------------------------------------------------------------------\n#                               DATA STRUCTURES\n# -----------------------------------------------------------------------------\n@dataclass\nclass TrainingOutput:\n    model: gpytorch.models.ExactGP\n    likelihood: GaussianLikelihood\n    training_losses: List[float]\n    wall_clock_time: float\n\n# -----------------------------------------------------------------------------\n#                               GP SURROGATE\n# -----------------------------------------------------------------------------\nclass DTSurrogate(gpytorch.models.ExactGP):\n    \"\"\"Exact GP surrogate identical to DyHPO\u2019s deep-kernel GP *without* the\n    feature extractor (handled outside).  This makes the core logic dataset\n    agnostic.  If later experiments need a deep feature extractor it can be\n    prepended to the *features* fed into this GP via the PLACEHOLDER in\n    preprocess.py.\n    \"\"\"\n\n    def __init__(self, train_x: torch.Tensor, train_y: torch.Tensor, likelihood: GaussianLikelihood):\n        super().__init__(train_x, train_y, likelihood)\n        self.mean_module = ConstantMean()\n        self.covar_module = ScaleKernel(RBFKernel())\n\n    def forward(self, x: torch.Tensor):\n        mean_x = self.mean_module(x)\n        covar_x = self.covar_module(x)\n        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)\n\n# -----------------------------------------------------------------------------\n#                          MONOTONICITY REGULARISER\n# -----------------------------------------------------------------------------\n\ndef monotonicity_penalty(pred_mean: torch.Tensor, budgets: torch.Tensor) -\u003e torch.Tensor:\n    \"\"\"Compute hinge-squared penalty that encourages *non-increasing* outputs\n    w.r.t. the budget dimension.  Implements\n        L_mono = mean( ReLU(m_i \u2212 m_j)\u00b2 ),   \u2200 i\u003cj,  b_i\u003cb_j\n    Args\n    ----\n    pred_mean : (N,)  Tensor of predictive means.\n    budgets   : (N,)  Corresponding budget values **must be increasing with\n                       training cost** (higher == more resource).\n    Returns\n    -------\n    torch.Tensor \u2013 scalar penalty value\n    \"\"\"\n    # Pairwise indices for upper triangular part (i\u003cj)\n    idx_i, idx_j = torch.triu_indices(len(budgets), len(budgets), offset=1)\n    mask = budgets[idx_i] \u003c budgets[idx_j]  # only consider pairs with b_i \u003c b_j\n    if mask.sum() == 0:\n        # Degenerate mini-batch (all budgets equal) \u2013 no penalty\n        return torch.zeros(1, device=pred_mean.device, dtype=pred_mean.dtype)\n    diff = pred_mean[idx_i[mask]] - pred_mean[idx_j[mask]]\n    return torch.relu(diff).pow(2).mean()\n\n# -----------------------------------------------------------------------------\n#                            TRAINING ROUTINE\n# -----------------------------------------------------------------------------\n\ndef train_surrogate(\n    cfg: Dict,\n    dataset: Dataset,\n    device: torch.device | str = \"cpu\",\n) -\u003e TrainingOutput:\n    \"\"\"Train the GP surrogate with monotonicity regularisation.\n\n    Parameters\n    ----------\n    cfg : Dict\n        Sub-dictionary *training* from the YAML configuration.\n    dataset : torch.utils.data.Dataset\n        Dataset must return (features, budget, target).\n    device : torch.device | str\n        CUDA / MPS / CPU device.\n    Returns\n    -------\n    TrainingOutput\n        Holds trained model, likelihood and training history.\n    \"\"\"\n\n    device = torch.device(device)\n\n    # Full-batch GP training (exact) \u2013 small to medium datasets only. For larger\n    # datasets, replace with mini-batch SVGP here **without touching the caller**.\n    features_list, budget_list, target_list = [], [], []\n    for feat, bud, tgt in DataLoader(dataset, batch_size=len(dataset)):\n        features_list.append(feat)\n        budget_list.append(bud)\n        target_list.append(tgt)\n    train_X = torch.cat([features_list[0], budget_list[0]], dim=-1).to(device)\n    train_y = target_list[0].to(device)\n    budgets = budget_list[0].to(device)\n\n    # GP model \u0026 likelihood\n    likelihood = GaussianLikelihood().to(device)\n    model = DTSurrogate(train_X, train_y, likelihood).to(device)\n\n    mll = ExactMarginalLogLikelihood(likelihood, model)\n    optimizer = torch.optim.Adam(model.parameters(), lr=cfg[\"lr\"], weight_decay=cfg.get(\"weight_decay\", 0.0))\n    n_epochs = int(cfg[\"epochs\"])\n    lam = float(cfg.get(\"lam\", 0.1))  # strength of monotonicity penalty\n\n    model.train()\n    likelihood.train()\n\n    tic = time.time()\n    training_losses: List[float] = []\n\n    pbar = tqdm(range(n_epochs), desc=\"Training GP\")\n    for _ in pbar:\n        optimizer.zero_grad()\n        output = model(train_X)\n        nll = -mll(output, train_y)  # Negative log-likelihood\n        penalty = monotonicity_penalty(output.mean, budgets)\n        loss = nll + lam * penalty\n        loss.backward()\n        optimizer.step()\n        training_losses.append(loss.item())\n        pbar.set_postfix({\"loss\": f\"{loss.item():.4f}\", \"pen\": f\"{penalty.item():.4f}\"})\n\n    wall_clock = time.time() - tic\n\n    return TrainingOutput(model, likelihood, training_losses, wall_clock)\n"}
+
+Analyze the Base code thoroughly, focusing on whether it provides a solid, consistent foundation for ALL future experimental variations while properly using placeholders for dataset/model-specific components.
+Output:
+{
+    "is_base_code_ready": false,
+    "base_code_issue": "Criteria not fully met: (1) model persistence missing – train_surrogate never saves the trained GP, and no load utility exists; (2) premature specialisation – core code hard-wires an Exact GP (RBF kernel) rather than using a MODEL_PLACEHOLDER, violating the ‘no premature specialisation’ rule; (3) evaluation framework ignores metrics declared in config (e.g. anytime_regret) and therefore is incomplete. All other criteria are satisfied but any single failure means the base foundation is not ready."
+}
