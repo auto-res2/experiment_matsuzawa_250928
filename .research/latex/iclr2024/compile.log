@@ -13,6 +13,7 @@ Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
 (/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty)
+(/usr/share/texmf/tex/latex/lm/lmodern.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
@@ -52,7 +53,7 @@ Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.sty
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype-pdftex.def)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.cfg))
-(/usr/share/texlive/texmf-dist/tex/latex/titlesec/titletoc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/titlesec/titletoc.sty) (./natbib.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty)))
@@ -251,6 +252,7 @@ ntourlua.code.tex))
 zlibraryplotmarks.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplotmarks.co
 de.tex))) (/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty)
+(/usr/share/texmf/tex/latex/lm/t1lmr.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
 No file paper.aux.
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
@@ -261,33 +263,40 @@ No file paper.aux.
 Package pgfplots notification 'compat/show suggested version=true': document ha
 s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
+(/usr/share/texmf/tex/latex/lm/ot1lmr.fd)
+(/usr/share/texmf/tex/latex/lm/omllmm.fd)
+(/usr/share/texmf/tex/latex/lm/omslmsy.fd)
+(/usr/share/texmf/tex/latex/lm/omxlmex.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
-Overfull \hbox (11.27962pt too wide) in paragraph at lines 145--146
-[]\T1/cmr/m/n/9 (-20) Multi-fidelity Bayesian op-ti-mi-sa-tion (MF-BO) ac-cel-e
+Overfull \hbox (11.35327pt too wide) in paragraph at lines 149--150
+[]\T1/lmr/m/n/9 (-20) Multi-fidelity Bayesian op-ti-mi-sa-tion (MF-BO) ac-cel-e
 r-ates hyper-parameter
 No file paper.bbl.
-[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
-! pdfTeX error (font expansion): auto expansion is only possible with scalable 
-fonts.
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.159 \end{document}
-                    
-!  ==> Fatal error occurred, no output PDF file produced!
+[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/en
+c/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}]
+(./paper.aux)
+
+Package rerunfilecheck Warning: File `paper.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+ )
+(see the transcript file for additional information)</usr/share/texmf/fonts/typ
+e1/public/lm/lmbx9.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi9.pfb></usr/
+share/texmf/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/publi
+c/lm/lmr12.pfb></usr/share/texmf/fonts/type1/public/lm/lmr17.pfb></usr/share/te
+xmf/fonts/type1/public/lm/lmr9.pfb>
+Output written on paper.pdf (1 page, 130370 bytes).
 Transcript written on paper.log.
 This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
 The top-level auxiliary file: paper.aux
 The style file: iclr2024_conference.bst
 I found no \citation commands---while reading file paper.aux
 Database file #1: references.bib
-I was expecting an "="---line 73 of file references.bib
- :   author    = {Khodak, Mikhail and Raghavan, Dilip and Sra, Suvrit},n  
- :                                                                        booktitle = {ICML},
-I'm skipping whatever remains of this entry
-(There were 2 error messages)
+(There was 1 error message)
 This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex)
  restricted \write18 enabled.
 entering extended mode
@@ -303,6 +312,7 @@ Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
 (/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty)
+(/usr/share/texmf/tex/latex/lm/lmodern.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
@@ -342,7 +352,7 @@ Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.sty
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype-pdftex.def)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.cfg))
-(/usr/share/texlive/texmf-dist/tex/latex/titlesec/titletoc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/titlesec/titletoc.sty) (./natbib.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty)))
@@ -541,6 +551,7 @@ ntourlua.code.tex))
 zlibraryplotmarks.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplotmarks.co
 de.tex))) (/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty)
+(/usr/share/texmf/tex/latex/lm/t1lmr.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
 (./paper.aux)
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
@@ -552,25 +563,31 @@ de.tex))) (/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty)
 Package pgfplots notification 'compat/show suggested version=true': document ha
 s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
+(/usr/share/texmf/tex/latex/lm/ot1lmr.fd)
+(/usr/share/texmf/tex/latex/lm/omllmm.fd)
+(/usr/share/texmf/tex/latex/lm/omslmsy.fd)
+(/usr/share/texmf/tex/latex/lm/omxlmex.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
-Overfull \hbox (11.27962pt too wide) in paragraph at lines 145--146
-[]\T1/cmr/m/n/9 (-20) Multi-fidelity Bayesian op-ti-mi-sa-tion (MF-BO) ac-cel-e
+Overfull \hbox (11.35327pt too wide) in paragraph at lines 149--150
+[]\T1/lmr/m/n/9 (-20) Multi-fidelity Bayesian op-ti-mi-sa-tion (MF-BO) ac-cel-e
 r-ates hyper-parameter
 (./paper.bbl
 
-LaTeX Warning: Empty `thebibliography' environment on input line 8.
+Package natbib Warning: Empty `thebibliography' environment on input line 8.
 
-) [1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
-! pdfTeX error (font expansion): auto expansion is only possible with scalable 
-fonts.
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.159 \end{document}
-                    
-!  ==> Fatal error occurred, no output PDF file produced!
+) [1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/
+enc/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}]
+(./paper.aux) )
+(see the transcript file for additional information)</usr/share/texmf/fonts/typ
+e1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx9.pfb></usr
+/share/texmf/fonts/type1/public/lm/lmmi9.pfb></usr/share/texmf/fonts/type1/publ
+ic/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr12.pfb></usr/share/t
+exmf/fonts/type1/public/lm/lmr17.pfb></usr/share/texmf/fonts/type1/public/lm/lm
+r9.pfb>
+Output written on paper.pdf (1 page, 152351 bytes).
 Transcript written on paper.log.
 This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex)
  restricted \write18 enabled.
@@ -587,6 +604,7 @@ Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))
 (/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty)
+(/usr/share/texmf/tex/latex/lm/lmodern.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
@@ -626,7 +644,7 @@ Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.sty
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype-pdftex.def)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/microtype.cfg))
-(/usr/share/texlive/texmf-dist/tex/latex/titlesec/titletoc.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/titlesec/titletoc.sty) (./natbib.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/caption/subcaption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty)))
@@ -825,6 +843,7 @@ ntourlua.code.tex))
 zlibraryplotmarks.code.tex
 (/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplotmarks.co
 de.tex))) (/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty)
+(/usr/share/texmf/tex/latex/lm/t1lmr.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
 (./paper.aux)
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
@@ -836,23 +855,29 @@ de.tex))) (/usr/share/texlive/texmf-dist/tex/latex/tools/tabularx.sty)
 Package pgfplots notification 'compat/show suggested version=true': document ha
 s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
+(/usr/share/texmf/tex/latex/lm/ot1lmr.fd)
+(/usr/share/texmf/tex/latex/lm/omllmm.fd)
+(/usr/share/texmf/tex/latex/lm/omslmsy.fd)
+(/usr/share/texmf/tex/latex/lm/omxlmex.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
-Overfull \hbox (11.27962pt too wide) in paragraph at lines 145--146
-[]\T1/cmr/m/n/9 (-20) Multi-fidelity Bayesian op-ti-mi-sa-tion (MF-BO) ac-cel-e
+Overfull \hbox (11.35327pt too wide) in paragraph at lines 149--150
+[]\T1/lmr/m/n/9 (-20) Multi-fidelity Bayesian op-ti-mi-sa-tion (MF-BO) ac-cel-e
 r-ates hyper-parameter
 (./paper.bbl
 
-LaTeX Warning: Empty `thebibliography' environment on input line 8.
+Package natbib Warning: Empty `thebibliography' environment on input line 8.
 
-) [1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
-! pdfTeX error (font expansion): auto expansion is only possible with scalable 
-fonts.
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.159 \end{document}
-                    
-!  ==> Fatal error occurred, no output PDF file produced!
+) [1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/
+enc/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}]
+(./paper.aux) )
+(see the transcript file for additional information)</usr/share/texmf/fonts/typ
+e1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx9.pfb></usr
+/share/texmf/fonts/type1/public/lm/lmmi9.pfb></usr/share/texmf/fonts/type1/publ
+ic/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr12.pfb></usr/share/t
+exmf/fonts/type1/public/lm/lmr17.pfb></usr/share/texmf/fonts/type1/public/lm/lm
+r9.pfb>
+Output written on paper.pdf (1 page, 152351 bytes).
 Transcript written on paper.log.
