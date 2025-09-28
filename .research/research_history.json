@@ -1,0 +1,10 @@
+{
+  "research_topic": "Improving efficiency of hyperparameter optimization",
+  "queries": [
+    "Bayesian optimization acceleration",
+    "Multi-fidelity hyperparameter optimization",
+    "Hyperband algorithm efficiency",
+    "Early stopping hyperparameter search",
+    "Meta-learning hyperparameter tuning"
+  ]
+}
