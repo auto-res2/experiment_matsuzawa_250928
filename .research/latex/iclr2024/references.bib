@@ -5,3 +5,695 @@
   publisher = {GitHub},
   url       = {https://github.com/airas-org/airas}
 }
+
+% ===========================================
+% REQUIRED CITATIONS
+% These papers must be cited in the manuscript
+% ===========================================
+
+@article{ament-2022-scalable,
+ abstract = {Bayesian Optimization (BO) has shown great promise for the global
+optimization of functions that are expensive to evaluate, but despite many
+successes, standard approaches can struggle in high dimensions. To improve the
+performance of BO, prior work suggested incorporating gradient information into
+a Gaussian process surrogate of the objective, giving rise to kernel matrices
+of size $nd \times nd$ for $n$ observations in $d$ dimensions. Na\"ively
+multiplying with (resp. inverting) these matrices requires
+$\mathcal{O}(n^2d^2)$ (resp. $\mathcal{O}(n^3d^3$)) operations, which becomes
+infeasible for moderate dimensions and sample sizes. Here, we observe that a
+wide range of kernels gives rise to structured matrices, enabling an exact
+$\mathcal{O}(n^2d)$ matrix-vector multiply for gradient observations and
+$\mathcal{O}(n^2d^2)$ for Hessian observations. Beyond canonical kernel
+classes, we derive a programmatic approach to leveraging this type of structure
+for transformations and combinations of the discussed kernel classes, which
+constitutes a structure-aware automatic differentiation algorithm. Our methods
+apply to virtually all canonical kernels and automatically extend to complex
+kernels, like the neural network, radial basis function network, and spectral
+mixture kernels without any additional derivations, enabling flexible,
+problem-dependent modeling while scaling first-order BO to high $d$.},
+ arxiv_url = {https://arxiv.org/pdf/2206.08366v1.pdf},
+ author = {Sebastian Ament and Carla Gomes},
+ title = {Scalable First-Order Bayesian Optimization via Structured Automatic Differentiation},
+ year = {2022}
+}
+
+@article{author-year-efficient,
+ title = {Efficient Hyperparameter Optimization with Adaptive Fidelity Identification}
+}
+
+@article{author-year-learning,
+ title = {Learning to Mutate with Hypergradient Guided Population}
+}
+
+@article{bohdal-2022-pasha,
+ abstract = {Hyperparameter optimization (HPO) and neural architecture search (NAS) are
+methods of choice to obtain the best-in-class machine learning models, but in
+practice they can be costly to run. When models are trained on large datasets,
+tuning them with HPO or NAS rapidly becomes prohibitively expensive for
+practitioners, even when efficient multi-fidelity methods are employed. We
+propose an approach to tackle the challenge of tuning machine learning models
+trained on large datasets with limited computational resources. Our approach,
+named PASHA, extends ASHA and is able to dynamically allocate maximum resources
+for the tuning procedure depending on the need. The experimental comparison
+shows that PASHA identifies well-performing hyperparameter configurations and
+architectures while consuming significantly fewer computational resources than
+ASHA.},
+ arxiv_url = {https://arxiv.org/pdf/2207.06940v2.pdf},
+ author = {Ondrej Bohdal and Lukas Balles and Martin Wistuba and Beyza Ermis and Cédric Archambeau and Giovanni Zappella},
+ github_url = {https://github.com/ondrejbohdal/pasha},
+ title = {PASHA: Efficient HPO and NAS with Progressive Resource Allocation},
+ year = {2022}
+}
+
+@article{hvarfner-2023-general,
+ abstract = {The optimization of expensive-to-evaluate black-box functions is prevalent in
+various scientific disciplines. Bayesian optimization is an automatic, general
+and sample-efficient method to solve these problems with minimal knowledge of
+the underlying function dynamics. However, the ability of Bayesian optimization
+to incorporate prior knowledge or beliefs about the function at hand in order
+to accelerate the optimization is limited, which reduces its appeal for
+knowledgeable practitioners with tight budgets. To allow domain experts to
+customize the optimization routine, we propose ColaBO, the first
+Bayesian-principled framework for incorporating prior beliefs beyond the
+typical kernel structure, such as the likely location of the optimizer or the
+optimal value. The generality of ColaBO makes it applicable across different
+Monte Carlo acquisition functions and types of user beliefs. We empirically
+demonstrate ColaBO's ability to substantially accelerate optimization when the
+prior information is accurate, and to retain approximately default performance
+when it is misleading.},
+ arxiv_url = {https://arxiv.org/pdf/2311.14645v2.pdf},
+ author = {Carl Hvarfner and Frank Hutter and Luigi Nardi},
+ github_url = {https://github.com/hvarfner/colabo},
+ journal = {12:th International Conference on Learning Representations (ICLR
+  2024)},
+ title = {A General Framework for User-Guided Bayesian Optimization},
+ year = {2023}
+}
+
+@article{jiang-2020-efficient,
+ abstract = {Bayesian optimization is a sequential decision making framework for
+optimizing expensive-to-evaluate black-box functions. Computing a full
+lookahead policy amounts to solving a highly intractable stochastic dynamic
+program. Myopic approaches, such as expected improvement, are often adopted in
+practice, but they ignore the long-term impact of the immediate decision.
+Existing nonmyopic approaches are mostly heuristic and/or computationally
+expensive. In this paper, we provide the first efficient implementation of
+general multi-step lookahead Bayesian optimization, formulated as a sequence of
+nested optimization problems within a multi-step scenario tree. Instead of
+solving these problems in a nested way, we equivalently optimize all decision
+variables in the full tree jointly, in a ``one-shot'' fashion. Combining this
+with an efficient method for implementing multi-step Gaussian process
+``fantasization,'' we demonstrate that multi-step expected improvement is
+computationally tractable and exhibits performance superior to existing methods
+on a wide range of benchmarks.},
+ arxiv_url = {https://arxiv.org/pdf/2006.15779v1.pdf},
+ author = {Shali Jiang and Daniel R. Jiang and Maximilian Balandat and Brian Karrer and Jacob R. Gardner and Roman Garnett},
+ title = {Efficient Nonmyopic Bayesian Optimization via One-Shot Multi-Step Trees},
+ year = {2020}
+}
+
+@article{jiang-2024-efficient,
+ abstract = {Hyperparameter optimization (HPO) and neural architecture search (NAS) are
+powerful in attaining state-of-the-art machine learning models, with Bayesian
+optimization (BO) standing out as a mainstream method. Extending BO into the
+multi-fidelity setting has been an emerging research topic, but faces the
+challenge of determining an appropriate fidelity for each hyperparameter
+configuration to fit the surrogate model. To tackle the challenge, we propose a
+multi-fidelity BO method named FastBO, which adaptively decides the fidelity
+for each configuration and efficiently offers strong performance. The
+advantages are achieved based on the novel concepts of efficient point and
+saturation point for each configuration.We also show that our adaptive fidelity
+identification strategy provides a way to extend any single-fidelity method to
+the multi-fidelity setting, highlighting its generality and applicability.},
+ arxiv_url = {https://arxiv.org/pdf/2409.00584v1.pdf},
+ author = {Jiantong Jiang and Ajmal Mian},
+ title = {Efficient Hyperparameter Optimization with Adaptive Fidelity Identification},
+ year = {2024}
+}
+
+@article{kadra-2023-scaling,
+ abstract = {Hyperparameter optimization is an important subfield of machine learning that
+focuses on tuning the hyperparameters of a chosen algorithm to achieve peak
+performance. Recently, there has been a stream of methods that tackle the issue
+of hyperparameter optimization, however, most of the methods do not exploit the
+dominant power law nature of learning curves for Bayesian optimization. In this
+work, we propose Deep Power Laws (DPL), an ensemble of neural network models
+conditioned to yield predictions that follow a power-law scaling pattern. Our
+method dynamically decides which configurations to pause and train
+incrementally by making use of gray-box evaluations. We compare our method
+against 7 state-of-the-art competitors on 3 benchmarks related to tabular,
+image, and NLP datasets covering 59 diverse tasks. Our method achieves the best
+results across all benchmarks by obtaining the best any-time results compared
+to all competitors.},
+ arxiv_url = {https://arxiv.org/pdf/2302.00441v3.pdf},
+ author = {Arlind Kadra and Maciej Janowski and Martin Wistuba and Josif Grabocka},
+ github_url = {https://github.com/releaunifreiburg/DPL},
+ title = {Scaling Laws for Hyperparameter Optimization},
+ year = {2023}
+}
+
+@article{khazi-2023-deep,
+ abstract = {Automatically optimizing the hyperparameters of Machine Learning algorithms
+is one of the primary open questions in AI. Existing work in Hyperparameter
+Optimization (HPO) trains surrogate models for approximating the response
+surface of hyperparameters as a regression task. In contrast, we hypothesize
+that the optimal strategy for training surrogates is to preserve the ranks of
+the performances of hyperparameter configurations as a Learning to Rank
+problem. As a result, we present a novel method that meta-learns neural network
+surrogates optimized for ranking the configurations' performances while
+modeling their uncertainty via ensembling. In a large-scale experimental
+protocol comprising 12 baselines, 16 HPO search spaces and 86 datasets/tasks,
+we demonstrate that our method achieves new state-of-the-art results in HPO.},
+ arxiv_url = {https://arxiv.org/pdf/2303.15212v2.pdf},
+ author = {Abdus Salam Khazi and Sebastian Pineda Arango and Josif Grabocka},
+ github_url = {https://github.com/huawei-noah/HEBO},
+ title = {Deep Ranking Ensembles for Hyperparameter Optimization},
+ year = {2023}
+}
+
+@article{khodak-2023-meta,
+ abstract = {We study online meta-learning with bandit feedback, with the goal of
+improving performance across multiple tasks if they are similar according to
+some natural similarity measure. As the first to target the adversarial
+online-within-online partial-information setting, we design meta-algorithms
+that combine outer learners to simultaneously tune the initialization and other
+hyperparameters of an inner learner for two important cases: multi-armed
+bandits (MAB) and bandit linear optimization (BLO). For MAB, the meta-learners
+initialize and set hyperparameters of the Tsallis-entropy generalization of
+Exp3, with the task-averaged regret improving if the entropy of the
+optima-in-hindsight is small. For BLO, we learn to initialize and tune online
+mirror descent (OMD) with self-concordant barrier regularizers, showing that
+task-averaged regret varies directly with an action space-dependent measure
+they induce. Our guarantees rely on proving that unregularized
+follow-the-leader combined with two levels of low-dimensional hyperparameter
+tuning is enough to learn a sequence of affine functions of non-Lipschitz and
+sometimes non-convex Bregman divergences bounding the regret of OMD.},
+ arxiv_url = {https://arxiv.org/pdf/2307.02295v2.pdf},
+ author = {Mikhail Khodak and Ilya Osadchiy and Keegan Harris and Maria-Florina Balcan and Kfir Y. Levy and Ron Meir and Zhiwei Steven Wu},
+ title = {Meta-Learning Adversarial Bandit Algorithms},
+ year = {2023}
+}
+
+@article{li-2020-multi,
+ abstract = {Bayesian optimization (BO) is a popular framework to optimize black-box
+functions. In many applications, the objective function can be evaluated at
+multiple fidelities to enable a trade-off between the cost and accuracy. To
+reduce the optimization cost, many multi-fidelity BO methods have been
+proposed. Despite their success, these methods either ignore or over-simplify
+the strong, complex correlations across the fidelities, and hence can be
+inefficient in estimating the objective function. To address this issue, we
+propose Deep Neural Network Multi-Fidelity Bayesian Optimization (DNN-MFBO)
+that can flexibly capture all kinds of complicated relationships between the
+fidelities to improve the objective function estimation and hence the
+optimization performance. We use sequential, fidelity-wise Gauss-Hermite
+quadrature and moment-matching to fulfill a mutual information-based
+acquisition function, which is computationally tractable and efficient. We show
+the advantages of our method in both synthetic benchmark datasets and
+real-world applications in engineering design.},
+ arxiv_url = {https://arxiv.org/pdf/2007.03117v4.pdf},
+ author = {Shibo Li and Wei Xing and Mike Kirby and Shandian Zhe},
+ github_url = {https://github.com/zi-w/Max-value-Entropy-Search},
+ title = {Multi-Fidelity Bayesian Optimization via Deep Neural Networks},
+ year = {2020}
+}
+
+@article{li-2021-batch,
+ abstract = {Bayesian optimization (BO) is a powerful approach for optimizing black-box,
+expensive-to-evaluate functions. To enable a flexible trade-off between the
+cost and accuracy, many applications allow the function to be evaluated at
+different fidelities. In order to reduce the optimization cost while maximizing
+the benefit-cost ratio, in this paper, we propose Batch Multi-fidelity Bayesian
+Optimization with Deep Auto-Regressive Networks (BMBO-DARN). We use a set of
+Bayesian neural networks to construct a fully auto-regressive model, which is
+expressive enough to capture strong yet complex relationships across all the
+fidelities, so as to improve the surrogate learning and optimization
+performance. Furthermore, to enhance the quality and diversity of queries, we
+develop a simple yet efficient batch querying method, without any combinatorial
+search over the fidelities. We propose a batch acquisition function based on
+Max-value Entropy Search (MES) principle, which penalizes highly correlated
+queries and encourages diversity. We use posterior samples and moment matching
+to fulfill efficient computation of the acquisition function and conduct
+alternating optimization over every fidelity-input pair, which guarantees an
+improvement at each step. We demonstrate the advantage of our approach on four
+real-world hyperparameter optimization applications.},
+ arxiv_url = {https://arxiv.org/pdf/2106.09884v2.pdf},
+ author = {Shibo Li and Robert M. Kirby and Shandian Zhe},
+ title = {Batch Multi-Fidelity Bayesian Optimization with  Deep Auto-Regressive Networks},
+ year = {2021}
+}
+
+@article{mallik-2023-priorband,
+ abstract = {Hyperparameters of Deep Learning (DL) pipelines are crucial for their
+downstream performance. While a large number of methods for Hyperparameter
+Optimization (HPO) have been developed, their incurred costs are often
+untenable for modern DL. Consequently, manual experimentation is still the most
+prevalent approach to optimize hyperparameters, relying on the researcher's
+intuition, domain knowledge, and cheap preliminary explorations. To resolve
+this misalignment between HPO algorithms and DL researchers, we propose
+PriorBand, an HPO algorithm tailored to DL, able to utilize both expert beliefs
+and cheap proxy tasks. Empirically, we demonstrate PriorBand's efficiency
+across a range of DL benchmarks and show its gains under informative expert
+input and robustness against poor expert beliefs},
+ arxiv_url = {https://arxiv.org/pdf/2306.12370v2.pdf},
+ author = {Neeratyoy Mallik and Edward Bergman and Carl Hvarfner and Danny Stoll and Maciej Janowski and Marius Lindauer and Luigi Nardi and Frank Hutter},
+ github_url = {https://github.com/automl/mf-prior-exp},
+ title = {PriorBand: Practical Hyperparameter Optimization in the Age of Deep Learning},
+ year = {2023}
+}
+
+@article{mlodozeniec-2023-hyperparameter,
+ abstract = {Well-tuned hyperparameters are crucial for obtaining good generalization
+behavior in neural networks. They can enforce appropriate inductive biases,
+regularize the model and improve performance -- especially in the presence of
+limited data. In this work, we propose a simple and efficient way for
+optimizing hyperparameters inspired by the marginal likelihood, an optimization
+objective that requires no validation data. Our method partitions the training
+data and a neural network model into $K$ data shards and parameter partitions,
+respectively. Each partition is associated with and optimized only on specific
+data shards. Combining these partitions into subnetworks allows us to define
+the ``out-of-training-sample" loss of a subnetwork, i.e., the loss on data
+shards unseen by the subnetwork, as the objective for hyperparameter
+optimization. We demonstrate that we can apply this objective to optimize a
+variety of different hyperparameters in a single training run while being
+significantly computationally cheaper than alternative methods aiming to
+optimize the marginal likelihood for neural networks. Lastly, we also focus on
+optimizing hyperparameters in federated learning, where retraining and
+cross-validation are particularly challenging.},
+ arxiv_url = {https://arxiv.org/pdf/2304.14766v1.pdf},
+ author = {Bruno Mlodozeniec and Matthias Reisser and Christos Louizos},
+ title = {Hyperparameter Optimization through Neural Network Partitioning},
+ year = {2023}
+}
+
+@article{nagler-2024-reshuffling,
+ abstract = {Hyperparameter optimization is crucial for obtaining peak performance of
+machine learning models. The standard protocol evaluates various hyperparameter
+configurations using a resampling estimate of the generalization error to guide
+optimization and select a final hyperparameter configuration. Without much
+evidence, paired resampling splits, i.e., either a fixed train-validation split
+or a fixed cross-validation scheme, are often recommended. We show that,
+surprisingly, reshuffling the splits for every configuration often improves the
+final model's generalization performance on unseen data. Our theoretical
+analysis explains how reshuffling affects the asymptotic behavior of the
+validation loss surface and provides a bound on the expected regret in the
+limiting regime. This bound connects the potential benefits of reshuffling to
+the signal and noise characteristics of the underlying optimization problem. We
+confirm our theoretical results in a controlled simulation study and
+demonstrate the practical usefulness of reshuffling in a large-scale, realistic
+hyperparameter optimization experiment. While reshuffling leads to test
+performances that are competitive with using fixed splits, it drastically
+improves results for a single train-validation holdout protocol and can often
+make holdout become competitive with standard CV while being computationally
+cheaper.},
+ arxiv_url = {https://arxiv.org/pdf/2405.15393v2.pdf},
+ author = {Thomas Nagler and Lennart Schneider and Bernd Bischl and Matthias Feurer},
+ github_url = {https://github.com/slds-lmu/paper_2024_reshuffling},
+ title = {Reshuffling Resampling Splits Can Improve Generalization of Hyperparameter Optimization},
+ year = {2024}
+}
+
+@article{nguyen-2019-bayesian,
+ abstract = {The performance of deep (reinforcement) learning systems crucially depends on
+the choice of hyperparameters. Their tuning is notoriously expensive, typically
+requiring an iterative training process to run for numerous steps to
+convergence. Traditional tuning algorithms only consider the final performance
+of hyperparameters acquired after many expensive iterations and ignore
+intermediate information from earlier training steps. In this paper, we present
+a Bayesian optimization (BO) approach which exploits the iterative structure of
+learning algorithms for efficient hyperparameter tuning. We propose to learn an
+evaluation function compressing learning progress at any stage of the training
+process into a single numeric score according to both training success and
+stability. Our BO framework is then balancing the benefit of assessing a
+hyperparameter setting over additional training steps against their computation
+cost. We further increase model efficiency by selectively including scores from
+different training steps for any evaluated hyperparameter set. We demonstrate
+the efficiency of our algorithm by tuning hyperparameters for the training of
+deep reinforcement learning agents and convolutional neural networks. Our
+algorithm outperforms all existing baselines in identifying optimal
+hyperparameters in minimal time.},
+ arxiv_url = {https://arxiv.org/pdf/1909.09593v5.pdf},
+ author = {Vu Nguyen and Sebastian Schulze and Michael A Osborne},
+ github_url = {https://github.com/ntienvu/BOIL},
+ title = {Bayesian Optimization for Iterative Learning},
+ year = {2019}
+}
+
+@article{parkerholder-2020-provably,
+ abstract = {Many of the recent triumphs in machine learning are dependent on well-tuned
+hyperparameters. This is particularly prominent in reinforcement learning (RL)
+where a small change in the configuration can lead to failure. Despite the
+importance of tuning hyperparameters, it remains expensive and is often done in
+a naive and laborious way. A recent solution to this problem is Population
+Based Training (PBT) which updates both weights and hyperparameters in a single
+training run of a population of agents. PBT has been shown to be particularly
+effective in RL, leading to widespread use in the field. However, PBT lacks
+theoretical guarantees since it relies on random heuristics to explore the
+hyperparameter space. This inefficiency means it typically requires vast
+computational resources, which is prohibitive for many small and medium sized
+labs. In this work, we introduce the first provably efficient PBT-style
+algorithm, Population-Based Bandits (PB2). PB2 uses a probabilistic model to
+guide the search in an efficient way, making it possible to discover high
+performing hyperparameter configurations with far fewer agents than typically
+required by PBT. We show in a series of RL experiments that PB2 is able to
+achieve high performance with a modest computational budget.},
+ arxiv_url = {https://arxiv.org/pdf/2002.02518v4.pdf},
+ author = {Jack Parker-Holder and Vu Nguyen and Stephen Roberts},
+ github_url = {https://github.com/jparkerholder/PB2},
+ title = {Provably Efficient Online Hyperparameter Optimization with Population-Based Bandits},
+ year = {2020}
+}
+
+@article{raghu-2021-meta,
+ abstract = {Pre-training (PT) followed by fine-tuning (FT) is an effective method for
+training neural networks, and has led to significant performance improvements
+in many domains. PT can incorporate various design choices such as task and
+data reweighting strategies, augmentation policies, and noise models, all of
+which can significantly impact the quality of representations learned. The
+hyperparameters introduced by these strategies therefore must be tuned
+appropriately. However, setting the values of these hyperparameters is
+challenging. Most existing methods either struggle to scale to high dimensions,
+are too slow and memory-intensive, or cannot be directly applied to the
+two-stage PT and FT learning process. In this work, we propose an efficient,
+gradient-based algorithm to meta-learn PT hyperparameters. We formalize the PT
+hyperparameter optimization problem and propose a novel method to obtain PT
+hyperparameter gradients by combining implicit differentiation and
+backpropagation through unrolled optimization. We demonstrate that our method
+improves predictive performance on two real-world domains. First, we optimize
+high-dimensional task weighting hyperparameters for multitask pre-training on
+protein-protein interaction graphs and improve AUROC by up to 3.9%. Second, we
+optimize a data augmentation neural network for self-supervised PT with SimCLR
+on electrocardiography data and improve AUROC by up to 1.9%.},
+ arxiv_url = {https://arxiv.org/pdf/2111.01754v1.pdf},
+ author = {Aniruddh Raghu and Jonathan Lorraine and Simon Kornblith and Matthew McDermott and David Duvenaud},
+ title = {Meta-learning to Improve Pre-training},
+ year = {2021}
+}
+
+@article{wistuba-2021-few,
+ abstract = {Hyperparameter optimization (HPO) is a central pillar in the automation of
+machine learning solutions and is mainly performed via Bayesian optimization,
+where a parametric surrogate is learned to approximate the black box response
+function (e.g. validation error). Unfortunately, evaluating the response
+function is computationally intensive. As a remedy, earlier work emphasizes the
+need for transfer learning surrogates which learn to optimize hyperparameters
+for an algorithm from other tasks. In contrast to previous work, we propose to
+rethink HPO as a few-shot learning problem in which we train a shared deep
+surrogate model to quickly adapt (with few response evaluations) to the
+response function of a new task. We propose the use of a deep kernel network
+for a Gaussian process surrogate that is meta-learned in an end-to-end fashion
+in order to jointly approximate the response functions of a collection of
+training data sets. As a result, the novel few-shot optimization of our deep
+kernel surrogate leads to new state-of-the-art results at HPO compared to
+several recent methods on diverse metadata sets.},
+ arxiv_url = {https://arxiv.org/pdf/2101.07667v1.pdf},
+ author = {Martin Wistuba and Josif Grabocka},
+ github_url = {https://github.com/boschresearch/MetaBO},
+ title = {Few-Shot Bayesian Optimization with Deep Kernel Surrogates},
+ year = {2021}
+}
+
+@article{wistuba-2022-supervising,
+ abstract = {Multi-fidelity (gray-box) hyperparameter optimization techniques (HPO) have
+recently emerged as a promising direction for tuning Deep Learning methods.
+However, existing methods suffer from a sub-optimal allocation of the HPO
+budget to the hyperparameter configurations. In this work, we introduce DyHPO,
+a Bayesian Optimization method that learns to decide which hyperparameter
+configuration to train further in a dynamic race among all feasible
+configurations. We propose a new deep kernel for Gaussian Processes that embeds
+the learning curve dynamics, and an acquisition function that incorporates
+multi-budget information. We demonstrate the significant superiority of DyHPO
+against state-of-the-art hyperparameter optimization methods through
+large-scale experiments comprising 50 datasets (Tabular, Image, NLP) and
+diverse architectures (MLP, CNN/NAS, RNN).},
+ arxiv_url = {https://arxiv.org/pdf/2202.09774v2.pdf},
+ author = {Martin Wistuba and Arlind Kadra and Josif Grabocka},
+ github_url = {https://github.com/releaunifreiburg/DyHPO},
+ title = {Supervising the Multi-Fidelity Race of Hyperparameter Configurations},
+ year = {2022}
+}
+
+% ===========================================
+% REFERENCE CANDIDATES
+% Additional reference papers for context
+% ===========================================
+
+@article{author-year-bayesian,
+ title = {Bayesian optimization with a ﬁnite budget: an approximate dynamic programming approach}
+}
+
+@article{author-year-benchmarking,
+ title = {Efﬁcient benchmarking of hyperpa- rameter optimizers via surrogates}
+}
+
+@article{author-year-dynamic,
+ title = {Dynamic programming and optimal control, volume 1}
+}
+
+@article{author-year-kriging,
+ title = {Kriging is well-suited to parallelize optimization}
+}
+
+@article{author-year-neuro,
+ title = {Neuro-dynamic programming}
+}
+
+@article{author-year-towards,
+ title = {Towards Gaussian process-based optimization with ﬁnite time horizon}
+}
+
+@article{balandat-2019-botorch,
+ abstract = {Bayesian optimization provides sample-efficient global optimization for a
+broad range of applications, including automatic machine learning, engineering,
+physics, and experimental design. We introduce BoTorch, a modern programming
+framework for Bayesian optimization that combines Monte-Carlo (MC) acquisition
+functions, a novel sample average approximation optimization approach,
+auto-differentiation, and variance reduction techniques. BoTorch's modular
+design facilitates flexible specification and optimization of probabilistic
+models written in PyTorch, simplifying implementation of new acquisition
+functions. Our approach is backed by novel theoretical convergence results and
+made practical by a distinctive algorithmic foundation that leverages fast
+predictive distributions, hardware acceleration, and deterministic
+optimization. We also propose a novel "one-shot" formulation of the Knowledge
+Gradient, enabled by a combination of our theoretical and software
+contributions. In experiments, we demonstrate the improved sample efficiency of
+BoTorch relative to other popular libraries.},
+ arxiv_url = {https://arxiv.org/pdf/1910.06403v3.pdf},
+ author = {Maximilian Balandat and Brian Karrer and Daniel R. Jiang and Samuel Daulton and Benjamin Letham and Andrew Gordon Wilson and Eytan Bakshy},
+ journal = {Advances in Neural Information Processing Systems 33, 2020},
+ title = {BoTorch: Programmable Bayesian Optimization in PyTorch},
+ year = {2019}
+}
+
+@article{desautels-2012-parallelizing,
+ abstract = {Can one parallelize complex exploration exploitation tradeoffs? As an
+example, consider the problem of optimal high-throughput experimental design,
+where we wish to sequentially design batches of experiments in order to
+simultaneously learn a surrogate function mapping stimulus to response and
+identify the maximum of the function. We formalize the task as a multi-armed
+bandit problem, where the unknown payoff function is sampled from a Gaussian
+process (GP), and instead of a single arm, in each round we pull a batch of
+several arms in parallel. We develop GP-BUCB, a principled algorithm for
+choosing batches, based on the GP-UCB algorithm for sequential GP optimization.
+We prove a surprising result; as compared to the sequential approach, the
+cumulative regret of the parallel algorithm only increases by a constant factor
+independent of the batch size B. Our results provide rigorous theoretical
+support for exploiting parallelism in Bayesian global optimization. We
+demonstrate the effectiveness of our approach on two real-world applications.},
+ arxiv_url = {https://arxiv.org/pdf/1206.6402v1.pdf},
+ author = {Thomas Desautels and Andreas Krause and Joel Burdick},
+ title = {Parallelizing exploration-exploitation tradeoffs in Gaussian process bandit optimization},
+ year = {2012}
+}
+
+@article{eggensperger-2017-bench,
+ abstract = {The optimization of algorithm (hyper-)parameters is crucial for achieving
+peak performance across a wide range of domains, ranging from deep neural
+networks to solvers for hard combinatorial problems. The resulting algorithm
+configuration (AC) problem has attracted much attention from the machine
+learning community. However, the proper evaluation of new AC procedures is
+hindered by two key hurdles. First, AC benchmarks are hard to set up. Second
+and even more significantly, they are computationally expensive: a single run
+of an AC procedure involves many costly runs of the target algorithm whose
+performance is to be optimized in a given AC benchmark scenario. One common
+workaround is to optimize cheap-to-evaluate artificial benchmark functions
+(e.g., Branin) instead of actual algorithms; however, these have different
+properties than realistic AC problems. Here, we propose an alternative
+benchmarking approach that is similarly cheap to evaluate but much closer to
+the original AC problem: replacing expensive benchmarks by surrogate benchmarks
+constructed from AC benchmarks. These surrogate benchmarks approximate the
+response surface corresponding to true target algorithm performance using a
+regression model, and the original and surrogate benchmark share the same
+(hyper-)parameter space. In our experiments, we construct and evaluate
+surrogate benchmarks for hyperparameter optimization as well as for AC problems
+that involve performance optimization of solvers for hard combinatorial
+problems, drawing training data from the runs of existing AC procedures. We
+show that our surrogate benchmarks capture overall important characteristics of
+the AC scenarios, such as high- and low-performing regions, from which they
+were derived, while being much easier to use and orders of magnitude cheaper to
+evaluate.},
+ arxiv_url = {https://arxiv.org/pdf/1703.10342v1.pdf},
+ author = {Katharina Eggensperger and Marius Lindauer and Holger H. Hoos and Frank Hutter and Kevin Leyton-Brown},
+ title = {Efﬁcient bench- marking of algorithm conﬁgurators via model-based surrogates},
+ year = {2017}
+}
+
+@article{frazier-2018-tutorial,
+ abstract = {Bayesian optimization is an approach to optimizing objective functions that
+take a long time (minutes or hours) to evaluate. It is best-suited for
+optimization over continuous domains of less than 20 dimensions, and tolerates
+stochastic noise in function evaluations. It builds a surrogate for the
+objective and quantifies the uncertainty in that surrogate using a Bayesian
+machine learning technique, Gaussian process regression, and then uses an
+acquisition function defined from this surrogate to decide where to sample. In
+this tutorial, we describe how Bayesian optimization works, including Gaussian
+process regression and three common acquisition functions: expected
+improvement, entropy search, and knowledge gradient. We then discuss more
+advanced techniques, including running multiple function evaluations in
+parallel, multi-fidelity and multi-information source optimization,
+expensive-to-evaluate constraints, random environmental conditions, multi-task
+Bayesian optimization, and the inclusion of derivative information. We conclude
+with a discussion of Bayesian optimization software and future research
+directions in the field. Within our tutorial material we provide a
+generalization of expected improvement to noisy evaluations, beyond the
+noise-free setting where it is more commonly applied. This generalization is
+justified by a formal decision-theoretic argument, standing in contrast to
+previous ad hoc modifications.},
+ arxiv_url = {https://arxiv.org/pdf/1807.02811v1.pdf},
+ author = {Peter I. Frazier},
+ title = {A tutorial on bayesian optimization},
+ year = {2018}
+}
+
+@article{gardner-2018-gpytorch,
+ abstract = {Despite advances in scalable models, the inference tools used for Gaussian
+processes (GPs) have yet to fully capitalize on developments in computing
+hardware. We present an efficient and general approach to GP inference based on
+Blackbox Matrix-Matrix multiplication (BBMM). BBMM inference uses a modified
+batched version of the conjugate gradients algorithm to derive all terms for
+training and inference in a single call. BBMM reduces the asymptotic complexity
+of exact GP inference from $O(n^3)$ to $O(n^2)$. Adapting this algorithm to
+scalable approximations and complex GP models simply requires a routine for
+efficient matrix-matrix multiplication with the kernel and its derivative. In
+addition, BBMM uses a specialized preconditioner to substantially speed up
+convergence. In experiments we show that BBMM effectively uses GPU hardware to
+dramatically accelerate both exact GP inference and scalable approximations.
+Additionally, we provide GPyTorch, a software platform for scalable GP
+inference via BBMM, built on PyTorch.},
+ arxiv_url = {https://arxiv.org/pdf/1809.11165v6.pdf},
+ author = {Jacob R. Gardner and Geoff Pleiss and David Bindel and Kilian Q. Weinberger and Andrew Gordon Wilson},
+ title = {Gpytorch: Black- box matrix-matrix gaussian process inference with gpu acceleration},
+ year = {2018}
+}
+
+@article{gonzlez-2015-glasses,
+ abstract = {We present GLASSES: Global optimisation with Look-Ahead through Stochastic
+Simulation and Expected-loss Search. The majority of global optimisation
+approaches in use are myopic, in only considering the impact of the next
+function value; the non-myopic approaches that do exist are able to consider
+only a handful of future evaluations. Our novel algorithm, GLASSES, permits the
+consideration of dozens of evaluations into the future. This is done by
+approximating the ideal look-ahead loss function, which is expensive to
+evaluate, by a cheaper alternative in which the future steps of the algorithm
+are simulated beforehand. An Expectation Propagation algorithm is used to
+compute the expected value of the loss.We show that the far-horizon planning
+thus enabled leads to substantive performance gains in empirical tests.},
+ arxiv_url = {https://arxiv.org/pdf/1510.06299v1.pdf},
+ author = {Javier González and Michael Osborne and Neil D. Lawrence},
+ title = {GLASSES: Relieving the myopia of Bayesian optimisation.},
+ year = {2015}
+}
+
+@article{griffiths-2017-constrained,
+ abstract = {Automatic Chemical Design is a framework for generating novel molecules with
+optimized properties. The original scheme, featuring Bayesian optimization over
+the latent space of a variational autoencoder, suffers from the pathology that
+it tends to produce invalid molecular structures. First, we demonstrate
+empirically that this pathology arises when the Bayesian optimization scheme
+queries latent points far away from the data on which the variational
+autoencoder has been trained. Secondly, by reformulating the search procedure
+as a constrained Bayesian optimization problem, we show that the effects of
+this pathology can be mitigated, yielding marked improvements in the validity
+of the generated molecules. We posit that constrained Bayesian optimization is
+a good approach for solving this class of training set mismatch in many
+generative tasks involving Bayesian optimization over the latent space of a
+variational autoencoder.},
+ arxiv_url = {https://arxiv.org/pdf/1709.05501v6.pdf},
+ author = {Ryan-Rhys Griffiths and José Miguel Hernández-Lobato},
+ title = {Constrained Bayesian optimization for automatic chemical design using variational autoencoders},
+ year = {2017}
+}
+
+@article{jiang-2018-nonmyopic,
+ abstract = {Active search is a learning paradigm for actively identifying as many members
+of a given class as possible. A critical target scenario is high-throughput
+screening for scientific discovery, such as drug or materials discovery. In
+this paper, we approach this problem in Bayesian decision framework. We first
+derive the Bayesian optimal policy under a natural utility, and establish a
+theoretical hardness of active search, proving that the optimal policy can not
+be approximated for any constant ratio. We also study the batch setting for the
+first time, where a batch of $b>1$ points can be queried at each iteration. We
+give an asymptotic lower bound, linear in batch size, on the adaptivity gap:
+how much we could lose if we query $b$ points at a time for $t$ iterations,
+instead of one point at a time for $bt$ iterations. We then introduce a novel
+approach to nonmyopic approximations of the optimal policy that admits
+efficient computation. Our proposed policy can automatically trade off
+exploration and exploitation, without relying on any tuning parameters. We also
+generalize our policy to batch setting, and propose two approaches to tackle
+the combinatorial search challenge. We evaluate our proposed policies on a
+large database of drug discovery and materials science. Results demonstrate the
+superior performance of our proposed policy in both sequential and batch
+setting; the nonmyopic behavior is also illustrated in various aspects.},
+ arxiv_url = {https://arxiv.org/pdf/1811.08871v2.pdf},
+ author = {Shali Jiang and Gustavo Malkomes and Benjamin Moseley and Roman Garnett},
+ title = {Efﬁcient nonmyopic active search},
+ year = {2018}
+}
+
+@article{jiang-2019-binoculars,
+ abstract = {Finite-horizon sequential experimental design (SED) arises naturally in many
+contexts, including hyperparameter tuning in machine learning among more
+traditional settings. Computing the optimal policy for such problems requires
+solving Bellman equations, which are generally intractable. Most existing work
+resorts to severely myopic approximations by limiting the decision horizon to
+only a single time-step, which can underweight exploration in favor of
+exploitation. We present BINOCULARS: Batch-Informed NOnmyopic Choices, Using
+Long-horizons for Adaptive, Rapid SED, a general framework for deriving
+efficient, nonmyopic approximations to the optimal experimental policy. Our key
+idea is simple and surprisingly effective: we first compute a one-step optimal
+batch of experiments, then select a single point from this batch to evaluate.
+We realize BINOCULARS for Bayesian optimization and Bayesian quadrature -- two
+notable SED problems with radically different objectives -- and demonstrate
+that BINOCULARS significantly outperforms myopic alternatives in real-world
+scenarios.},
+ arxiv_url = {https://arxiv.org/pdf/1909.04568v3.pdf},
+ author = {Shali Jiang and Henry Chai and Javier Gonzalez and Roman Garnett},
+ title = {BINOCULARS for Efﬁcient, Nonmyopic Sequential Experimental Design},
+ year = {2019}
+}
+
+@article{kandasamy-2018-neural,
+ abstract = {Bayesian Optimisation (BO) refers to a class of methods for global
+optimisation of a function $f$ which is only accessible via point evaluations.
+It is typically used in settings where $f$ is expensive to evaluate. A common
+use case for BO in machine learning is model selection, where it is not
+possible to analytically model the generalisation performance of a statistical
+model, and we resort to noisy and expensive training and validation procedures
+to choose the best model. Conventional BO methods have focused on Euclidean and
+categorical domains, which, in the context of model selection, only permits
+tuning scalar hyper-parameters of machine learning algorithms. However, with
+the surge of interest in deep learning, there is an increasing demand to tune
+neural network \emph{architectures}. In this work, we develop NASBOT, a
+Gaussian process based BO framework for neural architecture search. To
+accomplish this, we develop a distance metric in the space of neural network
+architectures which can be computed efficiently via an optimal transport
+program. This distance might be of independent interest to the deep learning
+community as it may find applications outside of BO. We demonstrate that NASBOT
+outperforms other alternatives for architecture search in several cross
+validation based model selection tasks on multi-layer perceptrons and
+convolutional neural networks.},
+ arxiv_url = {https://arxiv.org/pdf/1802.07191v3.pdf},
+ author = {Kirthevasan Kandasamy and Willie Neiswanger and Jeff Schneider and Barnabas Poczos and Eric Xing},
+ journal = {Neural Information Processing Systems (NeurIPS) 2018},
+ title = {Neural architecture search with bayesian optimisation and optimal transport},
+ year = {2018}
+}
