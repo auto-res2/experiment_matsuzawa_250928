@@ -74,11 +74,13 @@
 
 @inproceedings{khodak-2023-meta,
   title     = {Meta-Bandits for Robust Hyper-Parameter Optimisation},
-  author    = {Khodak, Mikhail and Raghavan, Dilip and Sra, Suvrit},n  booktitle = {ICML},
+  author    = {Khodak, Mikhail and Raghavan, Dilip and Sra, Suvrit},
+  booktitle = {International Conference on Machine Learning (ICML)},
   year      = {2023}
 }
 \end{filecontents*}
 
+% Pass the bibliography style option to natbib BEFORE loading the class
 \PassOptionsToPackage{numbers}{natbib}
 \documentclass{article} % For LaTeX2e
 
@@ -87,14 +89,16 @@
 % ------------------------------------------------------------
 \usepackage[utf8]{inputenc}  % allow utf-8 input
 \usepackage[T1]{fontenc}     % use 8-bit T1 fonts
+\usepackage{lmodern}         % scalable Latin Modern fonts (avoids bitmap issues)
 \usepackage[demo]{graphicx}  % placeholders for figures (avoids missing-file errors)
 \usepackage{hyperref}        % hyperlinks
 \usepackage{url}             % simple URL typesetting
 \usepackage{booktabs}        % professional-quality tables
 \usepackage{amsfonts}        % blackboard math symbols
 \usepackage{nicefrac}        % compact symbols for 1/2, etc.
-\usepackage{microtype}       % microtypography
+\usepackage{microtype}       % microtypography (works with lmodern)
 \usepackage{titletoc}
+\usepackage{natbib}          % load natbib after we passed the options
 
 % ------------------------------------------------------------
 % Extra packages used in the paper
