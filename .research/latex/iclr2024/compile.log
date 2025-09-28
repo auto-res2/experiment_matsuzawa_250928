@@ -267,15 +267,15 @@ s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
 
 Package natbib Warning: Citation `frazier-2018-tutorial' on page 1 undefined on
- input line 55.
+ input line 66.
 
 
 Package natbib Warning: Citation `wistuba-2022-supervising' on page 1 undefined
- on input line 55.
+ on input line 66.
 
 
 Package natbib Warning: Citation `jiang-2024-efficient' on page 1 undefined on 
-input line 55.
+input line 66.
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd)
 Underfull \vbox (badness 1776) has occurred while \output is active [1{/var/lib
@@ -283,136 +283,60 @@ Underfull \vbox (badness 1776) has occurred while \output is active [1{/var/lib
 enc/dvips/base/8r.enc}]
 
 Package natbib Warning: Citation `frazier-2018-tutorial' on page 2 undefined on
- input line 75.
+ input line 86.
 
 
 Package natbib Warning: Citation `kadra-2023-scaling' on page 2 undefined on in
-put line 75.
+put line 86.
 
 
 Package natbib Warning: Citation `khazi-2023-deep' on page 2 undefined on input
- line 75.
+ line 86.
 
 
 Package natbib Warning: Citation `mallik-2023-priorband' on page 2 undefined on
- input line 75.
+ input line 86.
 
 
 Package natbib Warning: Citation `hvarfner-2023-general' on page 2 undefined on
- input line 75.
+ input line 86.
 
 
 Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
- on input line 77.
+ on input line 88.
 
 
 Package natbib Warning: Citation `jiang-2024-efficient' on page 2 undefined on 
-input line 77.
+input line 88.
 
 
 Package natbib Warning: Citation `bohdal-2022-pasha' on page 2 undefined on inp
-ut line 79.
+ut line 90.
 
 
 Package natbib Warning: Citation `parkerholder-2020-provably' on page 2 undefin
-ed on input line 79.
+ed on input line 90.
 
 
 Package natbib Warning: Citation `wistuba-2021-few' on page 2 undefined on inpu
-t line 79.
+t line 90.
 
 
 Package natbib Warning: Citation `khodak-2023-meta' on page 2 undefined on inpu
-t line 79.
+t line 90.
 
 
 Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
- on input line 87.
+ on input line 98.
 
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.89 ...ons and thereby preserves the surrogate^^Y
-                                                  s flexibility to follow no...
-
-[2]
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.103 ...odification applies unchanged to DyHPO^^Y
-                                                  s deep-kernel GP and to Fa...
-
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.103 ...DyHPO^^Ys deep-kernel GP and to FastBO^^Y
-                                                  s embedded GP head.
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.109 DyHPO^^Y
-              s Expected Improvement over Minimal Fidelity (EIMF) and FastBO...
-
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.109 ...ver Minimal Fidelity (EIMF) and FastBO^^Y
-                                                  s saturation-aware selecto...
-
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.132 ...is assessed by two-way ANOVA and Cohen^^Y
-                                                  s \(d\).
-[3]
+[2] [3]
 
 Package natbib Warning: Citation `parkerholder-2020-provably' on page 4 undefin
-ed on input line 135.
+ed on input line 148.
 
 
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.146 ... evaluations and \(\sigma=0.1\), Cohen^^Y
-                                                  s \(d=0.9\) indicates a la...
-
-
-LaTeX Warning: File ` images/training\_loss\_full\_experiment.pdf ' not found o
-n input line 156.
+LaTeX Warning: File `images/training_loss_full_experiment.pdf' not found on inp
+ut line 169.
 
 
 ! Package pdftex.def Error: File `images/training_loss_full_experiment.pdf' not
@@ -422,13 +346,13 @@ See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.156 ...es/training\_loss\_full\_experiment.pdf }
+l.169 ...images/training_loss_full_experiment.pdf}
                                                   
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd)
 Underfull \vbox (badness 10000) has occurred while \output is active [4]
 
-LaTeX Warning: File ` images/validation\_rmse\_full\_experiment.pdf ' not found
- on input line 162.
+LaTeX Warning: File `images/validation_rmse_full_experiment.pdf' not found on i
+nput line 175.
 
 
 ! Package pdftex.def Error: File `images/validation_rmse_full_experiment.pdf' n
@@ -438,14 +362,10 @@ See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.162 .../validation\_rmse\_full\_experiment.pdf }
+l.175 ...ages/validation_rmse_full_experiment.pdf}
                                                   
 
 Underfull \vbox (badness 10000) has occurred while \output is active [5]
-
-Package natbib Warning: Citation `airas2025' on page 6 undefined on input line 
-176.
-
 No file paper.bbl.
 
 Package natbib Warning: There were undefined citations.
@@ -461,16 +381,17 @@ Package rerunfilecheck Warning: File `paper.out' has changed.
 
  )
 (see the transcript file for additional information)</usr/share/texlive/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fo
-nts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/typ
-e1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
-ic/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfo
-nts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/m
-sbm10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></u
-sr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texliv
-e/texmf-dist/fonts/type1/urw/times/utmr8a.pfb>
-Output written on paper.pdf (6 pages, 132752 bytes).
+ist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.
+pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/sha
+re/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texm
+f-dist/fonts/type1/urw/times/utmr8a.pfb>
+Output written on paper.pdf (6 pages, 142856 bytes).
 Transcript written on paper.log.
 This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
 The top-level auxiliary file: paper.aux
@@ -757,15 +678,15 @@ s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
 
 Package natbib Warning: Citation `frazier-2018-tutorial' on page 1 undefined on
- input line 55.
+ input line 66.
 
 
 Package natbib Warning: Citation `wistuba-2022-supervising' on page 1 undefined
- on input line 55.
+ on input line 66.
 
 
 Package natbib Warning: Citation `jiang-2024-efficient' on page 1 undefined on 
-input line 55.
+input line 66.
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd)
 Underfull \vbox (badness 1776) has occurred while \output is active [1{/var/lib
@@ -773,136 +694,60 @@ Underfull \vbox (badness 1776) has occurred while \output is active [1{/var/lib
 enc/dvips/base/8r.enc}]
 
 Package natbib Warning: Citation `frazier-2018-tutorial' on page 2 undefined on
- input line 75.
+ input line 86.
 
 
 Package natbib Warning: Citation `kadra-2023-scaling' on page 2 undefined on in
-put line 75.
+put line 86.
 
 
 Package natbib Warning: Citation `khazi-2023-deep' on page 2 undefined on input
- line 75.
+ line 86.
 
 
 Package natbib Warning: Citation `mallik-2023-priorband' on page 2 undefined on
- input line 75.
+ input line 86.
 
 
 Package natbib Warning: Citation `hvarfner-2023-general' on page 2 undefined on
- input line 75.
+ input line 86.
 
 
 Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
- on input line 77.
+ on input line 88.
 
 
 Package natbib Warning: Citation `jiang-2024-efficient' on page 2 undefined on 
-input line 77.
+input line 88.
 
 
 Package natbib Warning: Citation `bohdal-2022-pasha' on page 2 undefined on inp
-ut line 79.
+ut line 90.
 
 
 Package natbib Warning: Citation `parkerholder-2020-provably' on page 2 undefin
-ed on input line 79.
+ed on input line 90.
 
 
 Package natbib Warning: Citation `wistuba-2021-few' on page 2 undefined on inpu
-t line 79.
+t line 90.
 
 
 Package natbib Warning: Citation `khodak-2023-meta' on page 2 undefined on inpu
-t line 79.
+t line 90.
 
 
 Package natbib Warning: Citation `wistuba-2022-supervising' on page 2 undefined
- on input line 87.
+ on input line 98.
 
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.89 ...ons and thereby preserves the surrogate^^Y
-                                                  s flexibility to follow no...
-
-[2]
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.103 ...odification applies unchanged to DyHPO^^Y
-                                                  s deep-kernel GP and to Fa...
-
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.103 ...DyHPO^^Ys deep-kernel GP and to FastBO^^Y
-                                                  s embedded GP head.
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.109 DyHPO^^Y
-              s Expected Improvement over Minimal Fidelity (EIMF) and FastBO...
-
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.109 ...ver Minimal Fidelity (EIMF) and FastBO^^Y
-                                                  s saturation-aware selecto...
-
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.132 ...is assessed by two-way ANOVA and Cohen^^Y
-                                                  s \(d\).
-[3]
+[2] [3]
 
 Package natbib Warning: Citation `parkerholder-2020-provably' on page 4 undefin
-ed on input line 135.
+ed on input line 148.
 
 
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.146 ... evaluations and \(\sigma=0.1\), Cohen^^Y
-                                                  s \(d=0.9\) indicates a la...
-
-
-LaTeX Warning: File ` images/training\_loss\_full\_experiment.pdf ' not found o
-n input line 156.
+LaTeX Warning: File `images/training_loss_full_experiment.pdf' not found on inp
+ut line 169.
 
 
 ! Package pdftex.def Error: File `images/training_loss_full_experiment.pdf' not
@@ -912,13 +757,13 @@ See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.156 ...es/training\_loss\_full\_experiment.pdf }
+l.169 ...images/training_loss_full_experiment.pdf}
                                                   
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd)
 Underfull \vbox (badness 10000) has occurred while \output is active [4]
 
-LaTeX Warning: File ` images/validation\_rmse\_full\_experiment.pdf ' not found
- on input line 162.
+LaTeX Warning: File `images/validation_rmse_full_experiment.pdf' not found on i
+nput line 175.
 
 
 ! Package pdftex.def Error: File `images/validation_rmse_full_experiment.pdf' n
@@ -928,14 +773,10 @@ See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.162 .../validation\_rmse\_full\_experiment.pdf }
+l.175 ...ages/validation_rmse_full_experiment.pdf}
                                                   
 
 Underfull \vbox (badness 10000) has occurred while \output is active [5]
-
-Package natbib Warning: Citation `airas2025' on page 6 undefined on input line 
-176.
-
 (./paper.bbl)
 
 Package natbib Warning: There were undefined citations.
@@ -947,17 +788,18 @@ Package natbib Warning: Citation(s) may have changed.
 
 ) )
 (see the transcript file for additional information)</usr/share/texlive/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fo
-nts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/typ
-e1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
-ic/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfo
-nts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/m
-sbm10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></u
-sr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texliv
-e/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fo
-nts/type1/urw/times/utmri8a.pfb>
-Output written on paper.pdf (6 pages, 147768 bytes).
+ist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.
+pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/sha
+re/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texm
+f-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/ty
+pe1/urw/times/utmri8a.pfb>
+Output written on paper.pdf (6 pages, 156832 bytes).
 Transcript written on paper.log.
 This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex)
  restricted \write18 enabled.
@@ -1229,87 +1071,10 @@ s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg)
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd) [1{/var/lib/texmf/fo
 nts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-dist/fonts/enc/dvips
-/base/8r.enc}]
+/base/8r.enc}] [2] [3]
 
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.89 ...ons and thereby preserves the surrogate^^Y
-                                                  s flexibility to follow no...
-
-[2]
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.103 ...odification applies unchanged to DyHPO^^Y
-                                                  s deep-kernel GP and to Fa...
-
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.103 ...DyHPO^^Ys deep-kernel GP and to FastBO^^Y
-                                                  s embedded GP head.
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.109 DyHPO^^Y
-              s Expected Improvement over Minimal Fidelity (EIMF) and FastBO...
-
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.109 ...ver Minimal Fidelity (EIMF) and FastBO^^Y
-                                                  s saturation-aware selecto...
-
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.132 ...is assessed by two-way ANOVA and Cohen^^Y
-                                                  s \(d\).
-[3]
-
-! LaTeX Error: Unicode character ^^Y (U+0019)
-               not set up for use with LaTeX.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.146 ... evaluations and \(\sigma=0.1\), Cohen^^Y
-                                                  s \(d=0.9\) indicates a la...
-
-
-LaTeX Warning: File ` images/training\_loss\_full\_experiment.pdf ' not found o
-n input line 156.
+LaTeX Warning: File `images/training_loss_full_experiment.pdf' not found on inp
+ut line 169.
 
 
 ! Package pdftex.def Error: File `images/training_loss_full_experiment.pdf' not
@@ -1319,13 +1084,13 @@ See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.156 ...es/training\_loss\_full\_experiment.pdf }
+l.169 ...images/training_loss_full_experiment.pdf}
                                                   
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1pcr.fd)
 Underfull \vbox (badness 10000) has occurred while \output is active [4]
 
-LaTeX Warning: File ` images/validation\_rmse\_full\_experiment.pdf ' not found
- on input line 162.
+LaTeX Warning: File `images/validation_rmse_full_experiment.pdf' not found on i
+nput line 175.
 
 
 ! Package pdftex.def Error: File `images/validation_rmse_full_experiment.pdf' n
@@ -1335,21 +1100,22 @@ See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.162 .../validation\_rmse\_full\_experiment.pdf }
+l.175 ...ages/validation_rmse_full_experiment.pdf}
                                                   
 
 Underfull \vbox (badness 10000) has occurred while \output is active [5]
 (./paper.bbl) [6] (./paper.aux) )
 (see the transcript file for additional information)</usr/share/texlive/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fo
-nts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/typ
-e1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
-ic/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfo
-nts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/m
-sbm10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></u
-sr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texliv
-e/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fo
-nts/type1/urw/times/utmri8a.pfb>
-Output written on paper.pdf (6 pages, 148446 bytes).
+ist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.
+pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/sha
+re/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texm
+f-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/ty
+pe1/urw/times/utmri8a.pfb>
+Output written on paper.pdf (6 pages, 157659 bytes).
 Transcript written on paper.log.
