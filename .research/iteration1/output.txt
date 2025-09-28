@@ -1,0 +1,21 @@
+=== [PHASE 2/2] Full experiment start Sun Sep 28 01:09:53 PM UTC 2025 ===
+====================  Experiment Description  ====================
+{
+  "experiment_name": "full_experiment",
+  "config_path": "config/full_experiment.yaml",
+  "dataset": "synthetic",
+  "lambda": 0.1
+}
+==================================================================
+Generated figures:
+ - training_loss_full_experiment.pdf
+ - validation_rmse_full_experiment.pdf
+
+====================  Numerical Results  ====================
+{
+  "rmse": 0.05215320736169815,
+  "nll": 659.0140380859375,
+  "violation_rate": 0.3396053910255432
+}
+Results JSON saved to .research/iteration1/full_experiment_results.json
+=== [PHASE 2/2] Full experiment end Sun Sep 28 01:10:33 PM UTC 2025 ===

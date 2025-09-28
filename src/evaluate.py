@@ -27,7 +27,7 @@ def rmse(pred: Tensor, target: Tensor) -> float:
 @torch.no_grad()
 def monotonicity_violation_rate(pred_mean: Tensor, budgets: Tensor) -> float:
     """Fraction of pairwise violations – lower is better."""
-    idx_i, idx_j = torch.triu_indices(len(budgets), len(budgets), offset=1)
+    idx_i, idx_j = torch.triu_indices(len(budgets), len(budgets), offset=1, device=pred_mean.device)
     mask = budgets[idx_i] < budgets[idx_j]
     if not mask.any():
         return 0.0

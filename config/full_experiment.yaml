@@ -3,10 +3,10 @@
 # placeholders must be filled in the next step.
 
 data:
-  name: DATASET_PLACEHOLDER                # PLACEHOLDER: real dataset name here
-  n_samples: SPECIFIC_CONFIG_PLACEHOLDER   # PLACEHOLDER: total number of samples
-  n_features: SPECIFIC_CONFIG_PLACEHOLDER  # PLACEHOLDER: dimensionality
-  max_budget: SPECIFIC_CONFIG_PLACEHOLDER  # PLACEHOLDER: maximum fidelity/budget
+  name: synthetic                          # Use synthetic dataset for full experiment
+  n_samples: 10000                         # Total number of samples
+  n_features: 10                           # Dimensionality
+  max_budget: 20                           # Maximum fidelity/budget
   train_split: 0.8
 
 model:

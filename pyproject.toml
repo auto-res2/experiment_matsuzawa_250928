@@ -5,12 +5,13 @@ description = "Common core foundation for monotone-regularised MF-HPO experiment
 readme = "README.md"
 requires-python = ">=3.9"
 
-[project.dependencies]
-torch = "*"
-gpytorch = "*"
-pyyaml = "*"
-matplotlib = "*"
-seaborn = "*"
-scikit-learn = "*"
-numpy = "*"
-tqdm = "*"
+dependencies = [
+    "torch",
+    "gpytorch",
+    "pyyaml",
+    "matplotlib",
+    "seaborn",
+    "scikit-learn",
+    "numpy",
+    "tqdm"
+]

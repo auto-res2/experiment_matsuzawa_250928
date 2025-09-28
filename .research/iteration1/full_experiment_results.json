@@ -1,0 +1,8 @@
+{
+  "experiment": "full_experiment",
+  "metrics": {
+    "rmse": 0.05215320736169815,
+    "nll": 659.0140380859375,
+    "violation_rate": 0.3396053910255432
+  }
+}

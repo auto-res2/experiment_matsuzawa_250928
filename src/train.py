@@ -65,7 +65,7 @@ def compute_monotone_penalty(pred_mean: Tensor, budgets: Tensor) -> Tensor:
     pred_mean : (N,) predictive means for the batch
     budgets   : (N,) corresponding scalar budgets (unnormalised or normalised)
     """
-    idx_i, idx_j = torch.triu_indices(len(budgets), len(budgets), offset=1)
+    idx_i, idx_j = torch.triu_indices(len(budgets), len(budgets), offset=1, device=pred_mean.device)
     mask = budgets[idx_i] < budgets[idx_j]  # ONLY strictly increasing pairs
     if not mask.any():
         # Single budget in batch – no penalty.
