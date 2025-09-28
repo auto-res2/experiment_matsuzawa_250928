@@ -1,0 +1,17 @@
+
+Input:
+# Task
+You carefully read the contents of the “Paper Outline” and select one GitHub link from the “GitHub URLs List” that you think is most relevant to the contents.
+# Constraints
+- Output the index number corresponding to the selected GitHub URL.
+- Be sure to select only one GitHub URL.
+- If there is no related GitHub link, output None.
+# Paper Outline
+The methodology comprises a theoretical analysis and empirical studies. Theoretically, the paper investigates how reshuffling affects the empirical loss surface by deriving the limiting distribution of the validation loss, assuming it follows a zero-mean Gaussian process. A bound on the expected regret is derived, linking benefits of reshuffling to signal and noise characteristics. The simulation study uses a univariate quadratic loss surface combined with a noise process modeled by a squared exponential kernel, systematically varying curvature, noise correlation, and reshuffling extent. For empirical validation, benchmark experiments are conducted using Random Search, Bayesian Optimization (HEBO, SMAC3) algorithms, and various resampling strategies (holdout, M-fold CV, M-fold holdout, and their reshuffled variants). HPCs are evaluated by training on splits and validating, with splits recreated for reshuffled variants.
+
+# GitHub URLs List
+['https://github.com/scikit-learn/scikit-learn', 'https://github.com/scikit-learn/scikit-learn', 'https://github.com/huawei-noah/HEBO', 'https://github.com/optuna/optuna-integration', 'https://github.com/scikit-learn/scikit-learn', 'https://github.com/optuna/optuna-examples', 'https://github.com/optuna/optuna-examples', 'https://github.com/scikit-learn/scikit-learn', 'https://github.com/bayesian-optimization/BayesianOptimization', 'https://github.com/facebook/Ax', 'https://github.com/facebook/Ax', 'https://github.com/scikit-optimize/scikit-optimize', 'https://github.com/automl/SMAC3', 'https://github.com/dragonfly/dragonfly', 'https://github.com/ray-project/ray', 'https://github.com/ray-project/ray', 'https://github.com/scikit-learn/scikit-learn', 'https://github.com/hyperopt/hyperopt-sklearn', 'https://github.com/slds-lmu/paper_2024_reshuffling', 'https://github.com/slds-lmu/paper_2024_reshuffling']
+Output:
+{
+    "index": 18
+}
