@@ -1,0 +1,17 @@
+
+Input:
+# Task
+You carefully read the contents of the “Paper Outline” and select one GitHub link from the “GitHub URLs List” that you think is most relevant to the contents.
+# Constraints
+- Output the index number corresponding to the selected GitHub URL.
+- Be sure to select only one GitHub URL.
+- If there is no related GitHub link, output None.
+# Paper Outline
+DNN-MFBO models multi-fidelity functions using a stack of deep neural networks (NNs), where each NN corresponds to a fidelity. For fidelities `m > 1`, the NN's input is augmented with the output of the previous fidelity (`fm-1(x)`) to capture complex inter-fidelity relationships, while for `m=1`, it takes only the original input `x`. The NN output is defined as `fm(x) = w⊤mφθm(xm)`, where `wm` are output layer weights (random variables with a standard normal prior) and `θm` are other layer weights (hyperparameters). A stochastic variational learning algorithm is developed to jointly estimate the Gaussian posterior `q(wm)` and optimize `θm` and noise variances by maximizing an Evidence Lower Bound (ELBO) using the reparameterization trick. For optimization, a max-value entropy search (MES) acquisition function is used. To compute the acquisition function's posterior distributions `p(fm(x)|D)`, a critical challenge due to nonlinear fidelity coupling, the method employs sequential, fidelity-wise moment matching and Gauss-Hermite quadrature to approximate each posterior as a Gaussian. The two entropy terms of the MES acquisition function are then calculated: `H(fm(x)|D)` is directly computed from the Gaussian approximation, and `Ep(f*|D)[H(fm(x)|f*, D)]` is approximated via Monte Carlo sampling of `f*` and further approximating `H(fm(x)|f*, D)` by `H(fm(x)|fM(x) ≤ f*, D)`. This approximation for `m < M` involves moment matching and Gauss-Hermite quadrature on conditional posteriors. The acquisition function is maximized using L-BFGS with random initialization, with gradients computed via automatic differentiation.
+
+# GitHub URLs List
+['https://github.com/kirthevasank/mf-gp-ucb', 'https://github.com/YehongZ/MixedTypeBO', 'https://github.com/zi-w/Max-value-Entropy-Search', 'https://github.com/automl/SMAC3']
+Output:
+{
+    "index": 2
+}
