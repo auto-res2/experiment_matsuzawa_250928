@@ -1,0 +1,394 @@
+
+Input:
+You are a researcher with expertise in engineering in the field of machine learning.
+
+# Instructions
+- The content described in “Repository Content” corresponds to the GitHub repository of the method described in “Method.”
+- Please extract the following two pieces of information from “Repository Content”:
+    - experimental_code：Extract the implementation sections that are directly related to the method described in “Method.”
+    - experimental_info：Extract and output the experimental settings related to the method described in “Method.”
+
+# Method
+DNN-MFBO models multi-fidelity functions using a stack of deep neural networks (NNs), where each NN corresponds to a fidelity. For fidelities `m > 1`, the NN's input is augmented with the output of the previous fidelity (`fm-1(x)`) to capture complex inter-fidelity relationships, while for `m=1`, it takes only the original input `x`. The NN output is defined as `fm(x) = w⊤mφθm(xm)`, where `wm` are output layer weights (random variables with a standard normal prior) and `θm` are other layer weights (hyperparameters). A stochastic variational learning algorithm is developed to jointly estimate the Gaussian posterior `q(wm)` and optimize `θm` and noise variances by maximizing an Evidence Lower Bound (ELBO) using the reparameterization trick. For optimization, a max-value entropy search (MES) acquisition function is used. To compute the acquisition function's posterior distributions `p(fm(x)|D)`, a critical challenge due to nonlinear fidelity coupling, the method employs sequential, fidelity-wise moment matching and Gauss-Hermite quadrature to approximate each posterior as a Gaussian. The two entropy terms of the MES acquisition function are then calculated: `H(fm(x)|D)` is directly computed from the Gaussian approximation, and `Ep(f*|D)[H(fm(x)|f*, D)]` is approximated via Monte Carlo sampling of `f*` and further approximating `H(fm(x)|f*, D)` by `H(fm(x)|fM(x) ≤ f*, D)`. This approximation for `m < M` involves moment matching and Gauss-Hermite quadrature on conditional posteriors. The acquisition function is maximized using L-BFGS with random initialization, with gradients computed via automatic differentiation.
+
+# Repository Content
+File Path: test_functions/python_related/generate_simudata3.py
+Content:
+#!/usr/bin/env python
+# Copyright (c) 2017 Zi Wang
+from push_world import *
+import sys
+
+
+if __name__ == '__main__':
+    rx = float(sys.argv[1])
+    ry = float(sys.argv[2])
+    gx = float(sys.argv[4])
+    gy = float(sys.argv[5])
+    simu_steps = int(float(sys.argv[3]) * 10)
+    
+    # set it to False if no gui needed
+    world = b2WorldInterface(False)
+    oshape, osize, ofriction, odensity, bfriction, hand_shape, hand_size  = 'circle', 1, 0.01, 0.05, 0.01, 'rectangle', (0.3,1) 
+    thing,base = make_thing(500, 500, world, oshape, osize, ofriction, odensity, bfriction, (0,0))
+
+    init_angle = np.arctan(ry/rx)
+    robot = end_effector(world, (rx,ry), base, init_angle, hand_shape, hand_size)
+    ret = simu_push(world, thing, robot, base, simu_steps)
+    ret = np.linalg.norm(np.array([gx, gy]) - ret)
+    sys.stdout.write(str(ret))
+File Path: test_functions/python_related/generate_simudata4.py
+Content:
+#!/usr/bin/env python
+# Copyright (c) 2017 Zi Wang
+from push_world import *
+import sys
+
+# difference to generate_simudata is an input that control angle of push
+if __name__ == '__main__':
+    rx = float(sys.argv[1])
+    ry = float(sys.argv[2])
+    gx = float(sys.argv[4])
+    gy = float(sys.argv[5])
+    init_angle = float(sys.argv[6])
+    simu_steps = int(float(sys.argv[3]) * 10)
+    # Set the parameter to True if need gui
+    world = b2WorldInterface(False)
+    oshape, osize, ofriction, odensity, bfriction, hand_shape, hand_size  = 'circle', 1, 0.01, 0.05, 0.01, 'rectangle', (0.3,1) 
+    thing,base = make_thing(500, 500, world, oshape, osize, ofriction, odensity, bfriction, (0,0))
+    xvel = -rx;
+    yvel = -ry;
+    regu = np.linalg.norm([xvel,yvel])
+    xvel = xvel / regu * 10;
+    yvel = yvel / regu * 10;
+    robot = end_effector(world, (rx,ry), base, init_angle, hand_shape, hand_size)
+    ret = simu_push2(world, thing, robot, base, xvel, yvel, simu_steps)
+    ret = np.linalg.norm(np.array([gx, gy]) - ret)
+    sys.stdout.write(str(ret))
+File Path: test_functions/python_related/generate_simudata_2robot2thing.py
+Content:
+#!/usr/bin/env python
+# Copyright (c) 2017 Zi Wang
+from push_world import *
+import sys
+
+# difference to generate_simudata is an input that control angle of push
+if __name__ == '__main__':
+    rx = float(sys.argv[1])
+    ry = float(sys.argv[2])
+    xvel = float(sys.argv[3])
+    yvel = float(sys.argv[4])
+    simu_steps = int(float(sys.argv[5]) * 10)
+    init_angle = float(sys.argv[6])
+    rx2 = float(sys.argv[7])
+    ry2 = float(sys.argv[8])
+    xvel2 = float(sys.argv[9])
+    yvel2 = float(sys.argv[10])
+    simu_steps2 = int(float(sys.argv[11]) * 10)
+    init_angle2 = float(sys.argv[12])
+    rtor = float(sys.argv[13])
+    rtor2 = float(sys.argv[14])
+    gx = float(sys.argv[15])
+    gy = float(sys.argv[16])
+    gx2 = float(sys.argv[17])
+    gy2 = float(sys.argv[18])
+    
+    
+    world = b2WorldInterface(False)
+    oshape, osize, ofriction, odensity, bfriction, hand_shape, hand_size  = 'circle', 1, 0.01, 0.05, 0.01, 'rectangle', (1,0.3) #'circle', 0.3#
+    #thing,base = make_thing(500, 500, world, oshape, osize, ofriction, odensity, bfriction, (0,0))
+    base = make_base(500, 500, world)
+    thing = make_1thing(base, world, 'rectangle', (0.5,0.5), ofriction, odensity, (0, 2))
+    thing2 = make_1thing(base, world, 'circle', 1, ofriction, odensity, (0,-2))
+    #xvel = np.cos(init_angle)*5;
+    #yvel = np.sin(init_angle)*5;
+    robot = end_effector(world, (rx,ry), base, init_angle, hand_shape, hand_size)
+    robot2 = end_effector(world, (rx2,ry2), base, init_angle2, hand_shape, hand_size)
+    (ret1, ret2) = simu_push_2robot2thing(world, thing, thing2, robot, robot2, base, xvel, yvel, xvel2, yvel2, rtor, rtor2, simu_steps, simu_steps2)
+    #print ret1, ret2
+    ret1 = np.linalg.norm(np.array([gx, gy]) - ret1)
+    ret2 = np.linalg.norm(np.array([gx2, gy2]) - ret2)
+    sys.stdout.write(str(ret1+ret2))
+File Path: test_functions/python_related/push_world.py
+Content:
+#!/usr/bin/env python
+# Author: Ari Anders and Zi Wang
+from Box2D import *
+from Box2D.b2 import *
+import numpy as np
+import pygame
+import scipy.io
+from numpy import linalg as LA
+
+# this just makes pygame show what's going on    
+class guiWorld:
+    def __init__(self, fps):
+        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = 1000, 1000
+        self.TARGET_FPS = fps
+        self.PPM = 10.0 # pixels per meter
+        self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT), 0, 32)
+        pygame.display.set_caption('push simulator')
+        self.clock = pygame.time.Clock()
+        self.screen_origin = b2Vec2(self.SCREEN_WIDTH/(2*self.PPM), self.SCREEN_HEIGHT/(self.PPM*2))
+        self.colors = {
+            b2_staticBody : (255,255,255,255), 
+            b2_dynamicBody : (163,209,224,255)
+            }
+
+    def draw(self, bodies, bg_color=(64,64,64,0)):
+    #def draw(self, bodies, bg_color=(0,0,0,0)):
+        def my_draw_polygon(polygon, body, fixture):
+            vertices=[(self.screen_origin + body.transform*v)*self.PPM for v in polygon.vertices]
+            vertices=[(v[0], self.SCREEN_HEIGHT-v[1]) for v in vertices]
+            color = self.colors[body.type]
+            if body.userData == "obs":
+                color = (123,128,120,0)
+            if body.userData == "hand":
+                color = (174,136,218,0)
+
+            pygame.draw.polygon(self.screen, color, vertices)
+            
+        def my_draw_circle(circle, body, fixture):
+            position=(self.screen_origin + body.transform*circle.pos)*self.PPM
+            position=(position[0], self.SCREEN_HEIGHT-position[1])
+            color = self.colors[body.type]
+            if body.userData == "hand":
+                color = (174,136,218,0)
+            pygame.draw.circle(self.screen, color, [int(x) for x in
+            position], int(circle.radius*self.PPM))
+
+        b2PolygonShape.draw=my_draw_polygon
+        b2CircleShape.draw=my_draw_circle
+        # draw the world
+        self.screen.fill(bg_color)
+        self.clock.tick(self.TARGET_FPS) 
+        for body in bodies:
+            for fixture in body.fixtures:
+                fixture.shape.draw(body,fixture)
+        pygame.display.flip()
+
+# this is the interface to pybox2d
+class b2WorldInterface:
+    def __init__(self, do_gui=True):
+        self.world = b2World(gravity=(0.0,0.0), doSleep=True)
+        self.do_gui = do_gui
+        self.TARGET_FPS = 100
+        self.TIME_STEP = 1.0/self.TARGET_FPS
+        self.VEL_ITERS, self.POS_ITERS =10,10
+        self.bodies = []
+
+        if do_gui:
+            self.gui_world  = guiWorld(self.TARGET_FPS)
+            #raw_input()
+        else:
+            self.gui_world = None
+
+    def initialize_gui(self):
+        if self.gui_world == None:
+            self.gui_world = guiWorld(self.TARGET_FPS)
+        self.do_gui = True
+    def stop_gui(self):
+        self.do_gui = False
+
+    def add_bodies(self, new_bodies):
+        """ add a single b2Body or list of b2Bodies to the world"""
+        if type(new_bodies) == list:
+            self.bodies += new_bodies
+        else:
+            self.bodies.append(new_bodies)
+    def step(self, show_display=True, idx=0):
+        self.world.Step(self.TIME_STEP, self.VEL_ITERS, self.POS_ITERS)
+        if show_display and self.do_gui:
+            self.gui_world.draw(self.bodies)
+            #if idx % 10 == 0:
+            #    pygame.image.save(self.gui_world.screen,'tmp_images/'+str(int(sm.ttt*100)+idx)+'.bmp')
+
+class end_effector:
+    def __init__(self, b2world_interface, init_pos, base, init_angle, hand_shape='rectangle', hand_size=(0.3,1)):
+        world= b2world_interface.world
+        self.hand = world.CreateDynamicBody(position=init_pos,angle=init_angle)
+        self.hand_shape = hand_shape
+        self.hand_size = hand_size
+        # forceunit for circle and rect
+        if hand_shape == 'rectangle':
+            rshape = b2PolygonShape(box=hand_size)
+            self.forceunit = 30.0
+        elif hand_shape == 'circle':
+            rshape = b2CircleShape(radius=hand_size)
+            self.forceunit = 100.0
+        elif hand_shape == 'polygon':
+            rshape = b2PolygonShape(vertices=hand_size)
+        else:
+            raise Exception("%s is not a correct shape" % hand_shape)
+
+        self.hand.CreateFixture(
+            shape = rshape,
+            density = .1,
+            friction = .1
+            )
+        self.hand.userData = "hand"
+        
+        friction_joint = world.CreateFrictionJoint(
+            bodyA = base,
+            bodyB = self.hand,
+            maxForce = 2,
+            maxTorque = 2,
+            )
+        b2world_interface.add_bodies(self.hand)
+
+        
+
+    def set_pos(self, pos, angle):
+        self.hand.position = pos
+        self.hand.angle = angle
+    def apply_wrench(self, rlvel=(0,0), ravel=0):
+        #self.hand.ApplyForce(force, self.hand.position,wake=True)
+        #if avel != 0:
+        
+        avel = self.hand.angularVelocity
+        delta_avel = ravel - avel
+        torque = self.hand.mass*delta_avel*30.0
+        self.hand.ApplyTorque(torque, wake=True)
+        
+        #else:
+        lvel = self.hand.linearVelocity
+        delta_lvel = b2Vec2(rlvel) - b2Vec2(lvel)
+        force = self.hand.mass*delta_lvel*self.forceunit
+        self.hand.ApplyForce(force, self.hand.position,wake=True)
+        
+
+    def get_state(self, verbose=False):
+        state = list(self.hand.position) + [ self.hand.angle] +  \
+                list(self.hand.linearVelocity) + [self.hand.angularVelocity]
+        if verbose:
+            print_state = ["%.3f" % x for x in state]
+            print "position, velocity: (%s), (%s) " % \
+                ((", ").join(print_state[:3]), (", ").join(print_state[3:]) )
+    
+        return state
+
+def make_thing(table_width, table_length, b2world_interface, thing_shape, thing_size, thing_friction, thing_density, base_friction, obj_loc):
+    world = b2world_interface.world
+    base = world.CreateStaticBody(
+            position = (0,0),
+            #friction = base_friction,
+            shapes = b2PolygonShape(box=(table_length,table_width)),
+            )
+
+    link = world.CreateDynamicBody(position=obj_loc)
+    if thing_shape == 'rectangle':
+        linkshape = b2PolygonShape(box=thing_size)
+    elif thing_shape == 'circle':
+        linkshape = b2CircleShape(radius=thing_size)
+    elif thing_shape == 'polygon':
+        linkshape = b2PolygonShape(vertices=thing_size)
+    else:
+        raise Exception("%s is not a correct shape" % thing_shape)
+    
+    link.CreateFixture(
+            shape = linkshape, 
+            density = thing_density,
+            friction = thing_friction,
+            )
+    friction_joint = world.CreateFrictionJoint(
+            bodyA = base,
+            bodyB = link,
+            maxForce = 5,
+            maxTorque = 2,
+            )
+
+    b2world_interface.add_bodies([base,link])
+    return link,base
+
+
+def simu_push(world, thing, robot, base, simulation_steps):
+    # simulating push with fixed direction pointing from robot location to thing location 
+    desired_vel = thing.position - robot.hand.position
+    desired_vel = desired_vel / np.linalg.norm(desired_vel) * 5
+    rvel = b2Vec2(desired_vel[0]+np.random.normal(0,0.1),desired_vel[1]+np.random.normal(0,0.1))
+
+    rstop = False
+    for t in range(simulation_steps+100):
+        if not rstop:
+            robot.apply_wrench(rvel)
+        world.step()
+
+        ostate = list(thing.position) + [ thing.angle] +  \
+                list(thing.linearVelocity) + [thing.angularVelocity]
+        if t == simulation_steps - 1:
+            rstop = True
+    return list(thing.position)
+def simu_push2(world, thing, robot, base, xvel, yvel, simulation_steps):
+    desired_vel = np.array([xvel, yvel])
+    rvel = b2Vec2(desired_vel[0]+np.random.normal(0,0.1),desired_vel[1]+np.random.normal(0,0.1))
+
+    rstop = False
+    for t in range(simulation_steps+100):
+        if not rstop:
+            robot.apply_wrench(rvel)
+        world.step()
+
+        ostate = list(thing.position) + [ thing.angle] +  \
+                list(thing.linearVelocity) + [thing.angularVelocity]
+        if t == simulation_steps - 1:
+            rstop = True
+    return list(thing.position)
+
+def make_1thing(base, b2world_interface, thing_shape, thing_size, thing_friction, thing_density, obj_loc):
+    world = b2world_interface.world
+    
+    link = world.CreateDynamicBody(position=obj_loc)
+    if thing_shape == 'rectangle':
+        linkshape = b2PolygonShape(box=thing_size)
+    elif thing_shape == 'circle':
+        linkshape = b2CircleShape(radius=thing_size)
+    elif thing_shape == 'polygon':
+        linkshape = b2PolygonShape(vertices=thing_size)
+    else:
+        raise Exception("%s is not a correct shape" % thing_shape)
+    
+    link.CreateFixture(
+            shape = linkshape, 
+            density = thing_density,
+            friction = thing_friction,
+            )
+    friction_joint = world.CreateFrictionJoint(
+            bodyA = base,
+            bodyB = link,
+            maxForce = 5,
+            maxTorque = 2,
+            )
+
+    b2world_interface.add_bodies([link])
+    return link
+def simu_push_2robot2thing(world, thing, thing2, robot, robot2, base, xvel, yvel, xvel2, yvel2, rtor, rtor2, simulation_steps, simulation_steps2):
+    desired_vel = np.array([xvel, yvel])
+    rvel = b2Vec2(desired_vel[0]+np.random.normal(0,0.01),desired_vel[1]+np.random.normal(0,0.01))
+    
+    desired_vel2 = np.array([xvel2, yvel2])
+    rvel2 = b2Vec2(desired_vel2[0]+np.random.normal(0,0.01),desired_vel2[1]+np.random.normal(0,0.01))
+    tmax = np.max([simulation_steps,simulation_steps2])
+    for t in range(tmax+100):
+        if t < simulation_steps:
+            robot.apply_wrench(rvel, rtor)
+        if t < simulation_steps2:
+            robot2.apply_wrench(rvel2, rtor2)
+        world.step()
+
+    return (list(thing.position), list(thing2.position))
+def make_base(table_width, table_length, b2world_interface):
+    world = b2world_interface.world
+    base = world.CreateStaticBody(
+            position = (0,0),
+            #friction = base_friction,
+            shapes = b2PolygonShape(box=(table_length,table_width)),
+            )
+   
+
+    b2world_interface.add_bodies([base])
+    return base
+Output:
+{
+    "experimental_code": "File: test_functions/python_related/generate_simudata3.py\nContent:\n#!/usr/bin/env python\n# Copyright (c) 2017 Zi Wang\nfrom push_world import *\nimport sys\n\n\nif __name__ == '__main__':\n    rx = float(sys.argv[1])\n    ry = float(sys.argv[2])\n    gx = float(sys.argv[4])\n    gy = float(sys.argv[5])\n    simu_steps = int(float(sys.argv[3]) * 10)\n    \n    # set it to False if no gui needed\n    world = b2WorldInterface(False)\n    oshape, osize, ofriction, odensity, bfriction, hand_shape, hand_size  = 'circle', 1, 0.01, 0.05, 0.01, 'rectangle', (0.3,1) \n    thing,base = make_thing(500, 500, world, oshape, osize, ofriction, odensity, bfriction, (0,0))\n\n    init_angle = np.arctan(ry/rx)\n    robot = end_effector(world, (rx,ry), base, init_angle, hand_shape, hand_size)\n    ret = simu_push(world, thing, robot, base, simu_steps)\n    ret = np.linalg.norm(np.array([gx, gy]) - ret)\n    sys.stdout.write(str(ret))\n\nFile: test_functions/python_related/generate_simudata4.py\nContent:\n#!/usr/bin/env python\n# Copyright (c) 2017 Zi Wang\nfrom push_world import *\nimport sys\n\n# difference to generate_simudata is an input that control angle of push\nif __name__ == '__main__':\n    rx = float(sys.argv[1])\n    ry = float(sys.argv[2])\n    gx = float(sys.argv[4])\n    gy = float(sys.argv[5])\n    init_angle = float(sys.argv[6])\n    simu_steps = int(float(sys.argv[3]) * 10)\n    # Set the parameter to True if need gui\n    world = b2WorldInterface(False)\n    oshape, osize, ofriction, odensity, bfriction, hand_shape, hand_size  = 'circle', 1, 0.01, 0.05, 0.01, 'rectangle', (0.3,1) \n    thing,base = make_thing(500, 500, world, oshape, osize, ofriction, odensity, bfriction, (0,0))\n    xvel = -rx;\n    yvel = -ry;\n    regu = np.linalg.norm([xvel,yvel])\n    xvel = xvel / regu * 10;\n    yvel = yvel / regu * 10;\n    robot = end_effector(world, (rx,ry), base, init_angle, hand_shape, hand_size)\n    ret = simu_push2(world, thing, robot, base, xvel, yvel, simu_steps)\n    ret = np.linalg.norm(np.array([gx, gy]) - ret)\n    sys.stdout.write(str(ret))\n\nFile: test_functions/python_related/generate_simudata_2robot2thing.py\nContent:\n#!/usr/bin/env python\n# Copyright (c) 2017 Zi Wang\nfrom push_world import *\nimport sys\n\n# difference to generate_simudata is an input that control angle of push\nif __name__ == '__main__':\n    rx = float(sys.argv[1])\n    ry = float(sys.argv[2])\n    xvel = float(sys.argv[3])\n    yvel = float(sys.argv[4])\n    simu_steps = int(float(sys.argv[5]) * 10)\n    init_angle = float(sys.argv[6])\n    rx2 = float(sys.argv[7])\n    ry2 = float(sys.argv[8])\n    xvel2 = float(sys.argv[9])\n    yvel2 = float(sys.argv[10])\n    simu_steps2 = int(float(sys.argv[11]) * 10)\n    init_angle2 = float(sys.argv[12])\n    rtor = float(sys.argv[13])\n    rtor2 = float(sys.argv[14])\n    gx = float(sys.argv[15])\n    gy = float(sys.argv[16])\n    gx2 = float(sys.argv[17])\n    gy2 = float(sys.argv[18])\n    \n    \n    world = b2WorldInterface(False)\n    oshape, osize, ofriction, odensity, bfriction, hand_shape, hand_size  = 'circle', 1, 0.01, 0.05, 0.01, 'rectangle', (1,0.3) \n    base = make_base(500, 500, world)\n    thing = make_1thing(base, world, 'rectangle', (0.5,0.5), ofriction, odensity, (0, 2))\n    thing2 = make_1thing(base, world, 'circle', 1, ofriction, odensity, (0,-2))\n    robot = end_effector(world, (rx,ry), base, init_angle, hand_shape, hand_size)\n    robot2 = end_effector(world, (rx2,ry2), base, init_angle2, hand_shape, hand_size)\n    (ret1, ret2) = simu_push_2robot2thing(world, thing, thing2, robot, robot2, base, xvel, yvel, xvel2, yvel2, rtor, rtor2, simu_steps, simu_steps2)\n    ret1 = np.linalg.norm(np.array([gx, gy]) - ret1)\n    ret2 = np.linalg.norm(np.array([gx2, gy2]) - ret2)\n    sys.stdout.write(str(ret1+ret2))\n\nFile: test_functions/python_related/push_world.py\nContent:\n(Relevant functions)\nclass b2WorldInterface:\n    def __init__(self, do_gui=True):\n        self.world = b2World(gravity=(0.0,0.0), doSleep=True)\n        self.do_gui = do_gui\n        self.TARGET_FPS = 100\n        self.TIME_STEP = 1.0/self.TARGET_FPS\n        self.VEL_ITERS, self.POS_ITERS =10,10\n        self.bodies = []\n\n        if do_gui:\n            self.gui_world  = guiWorld(self.TARGET_FPS)\n        else:\n            self.gui_world = None\n    def step(self, show_display=True, idx=0):\n        self.world.Step(self.TIME_STEP, self.VEL_ITERS, self.POS_ITERS)\n\nclass end_effector:\n    def __init__(self, b2world_interface, init_pos, base, init_angle, hand_shape='rectangle', hand_size=(0.3,1)):\n        world= b2world_interface.world\n        self.hand = world.CreateDynamicBody(position=init_pos,angle=init_angle)\n        self.hand_shape = hand_shape\n        self.hand_size = hand_size\n        if hand_shape == 'rectangle':\n            rshape = b2PolygonShape(box=hand_size)\n            self.forceunit = 30.0\n        elif hand_shape == 'circle':\n            rshape = b2CircleShape(radius=hand_size)\n            self.forceunit = 100.0\n        self.hand.CreateFixture(\n            shape = rshape,\n            density = .1,\n            friction = .1\n            )\n        self.hand.userData = \"hand\"\n        friction_joint = world.CreateFrictionJoint(\n            bodyA = base,\n            bodyB = self.hand,\n            maxForce = 2,\n            maxTorque = 2,\n            )\n        b2world_interface.add_bodies(self.hand)\n\n    def apply_wrench(self, rlvel=(0,0), ravel=0):\n        avel = self.hand.angularVelocity\n        delta_avel = ravel - avel\n        torque = self.hand.mass*delta_avel*30.0\n        self.hand.ApplyTorque(torque, wake=True)\n        \n        lvel = self.hand.linearVelocity\n        delta_lvel = b2Vec2(rlvel) - b2Vec2(lvel)\n        force = self.hand.mass*delta_lvel*self.forceunit\n        self.hand.ApplyForce(force, self.hand.position,wake=True)\n\ndef make_thing(table_width, table_length, b2world_interface, thing_shape, thing_size, thing_friction, thing_density, base_friction, obj_loc):\n    world = b2world_interface.world\n    base = world.CreateStaticBody(\n            position = (0,0),\n            shapes = b2PolygonShape(box=(table_length,table_width)),\n            )\n\n    link = world.CreateDynamicBody(position=obj_loc)\n    if thing_shape == 'rectangle':\n        linkshape = b2PolygonShape(box=thing_size)\n    elif thing_shape == 'circle':\n        linkshape = b2CircleShape(radius=thing_size)\n    link.CreateFixture(\n            shape = linkshape, \n            density = thing_density,\n            friction = thing_friction,\n            )\n    friction_joint = world.CreateFrictionJoint(\n            bodyA = base,\n            bodyB = link,\n            maxForce = 5,\n            maxTorque = 2,\n            )\n\n    b2world_interface.add_bodies([base,link])\n    return link,base\n\ndef simu_push(world, thing, robot, base, simulation_steps):\n    desired_vel = thing.position - robot.hand.position\n    desired_vel = desired_vel / np.linalg.norm(desired_vel) * 5\n    rvel = b2Vec2(desired_vel[0]+np.random.normal(0,0.1),desired_vel[1]+np.random.normal(0,0.1))\n\n    rstop = False\n    for t in range(simulation_steps+100):\n        if not rstop:\n            robot.apply_wrench(rvel)\n        world.step()\n        if t == simulation_steps - 1:\n            rstop = True\n    return list(thing.position)\n\ndef simu_push2(world, thing, robot, base, xvel, yvel, simulation_steps):\n    desired_vel = np.array([xvel, yvel])\n    rvel = b2Vec2(desired_vel[0]+np.random.normal(0,0.1),desired_vel[1]+np.random.normal(0,0.1))\n\n    rstop = False\n    for t in range(simulation_steps+100):\n        if not rstop:\n            robot.apply_wrench(rvel)\n        world.step()\n        if t == simulation_steps - 1:\n            rstop = True\n    return list(thing.position)\n\ndef make_1thing(base, b2world_interface, thing_shape, thing_size, thing_friction, thing_density, obj_loc):\n    world = b2world_interface.world\n    link = world.CreateDynamicBody(position=obj_loc)\n    if thing_shape == 'rectangle':\n        linkshape = b2PolygonShape(box=thing_size)\n    elif thing_shape == 'circle':\n        linkshape = b2CircleShape(radius=thing_size)\n    link.CreateFixture(\n            shape = linkshape, \n            density = thing_density,\n            friction = thing_friction,\n            )\n    friction_joint = world.CreateFrictionJoint(\n            bodyA = base,\n            bodyB = link,\n            maxForce = 5,\n            maxTorque = 2,\n            )\n\n    b2world_interface.add_bodies([link])\n    return link\n\ndef simu_push_2robot2thing(world, thing, thing2, robot, robot2, base, xvel, yvel, xvel2, yvel2, rtor, rtor2, simulation_steps, simulation_steps2):\n    desired_vel = np.array([xvel, yvel])\n    rvel = b2Vec2(desired_vel[0]+np.random.normal(0,0.01),desired_vel[1]+np.random.normal(0,0.01))\n    \n    desired_vel2 = np.array([xvel2, yvel2])\n    rvel2 = b2Vec2(desired_vel2[0]+np.random.normal(0,0.01),desired_vel2[1]+np.random.normal(0,0.01))\n    tmax = np.max([simulation_steps,simulation_steps2])\n    for t in range(tmax+100):\n        if t < simulation_steps:\n            robot.apply_wrench(rvel, rtor)\n        if t < simulation_steps2:\n            robot2.apply_wrench(rvel2, rtor2)\n        world.step()\n    return (list(thing.position), list(thing2.position))\n\ndef make_base(table_width, table_length, b2world_interface):\n    world = b2world_interface.world\n    base = world.CreateStaticBody(\n            position = (0,0),\n            shapes = b2PolygonShape(box=(table_length,table_width)),\n            )\n    b2world_interface.add_bodies([base])\n    return base\n",
+    "experimental_info": "The repository provides Python scripts for simulating robotic pushing tasks using the Box2D physics engine, which can serve as objective functions for Bayesian Optimization methods like DNN-MFBO. The experimental settings are as follows:\n\n**General Simulation Environment:**\n-   **Physics Engine:** Box2D (via `pybox2d` library).\n-   **Gravity:** (0.0, 0.0).\n-   **GUI:** Disabled by default (`b2WorldInterface(False)`).\n-   **Time Stepping:** `TARGET_FPS = 100`, `TIME_STEP = 1.0 / TARGET_FPS` (0.01 seconds per step). `VEL_ITERS = 10`, `POS_ITERS = 10` for world step.\n-   **Base/Table:** A static body created with `make_thing` or `make_base`, typically (0,0) position, 500x500 units in `generate_simudata` scripts.\n\n**Object (Thing) Properties (for `make_thing`/`make_1thing`):**\n-   **Shape:** `circle` or `rectangle` (or `polygon`). Default: `circle`.\n-   **Size:** `osize=1` (radius for circle) or `(0.5,0.5)` for rectangle.\n-   **Friction:** `ofriction=0.01`.\n-   **Density:** `odensity=0.05`.\n-   **Initial Position:** Varies, e.g., (0,0) in `generate_simudata3/4`, (0,2) or (0,-2) in `generate_simudata_2robot2thing`.\n-   **Friction Joint (Object-Base):** `maxForce = 5`, `maxTorque = 2`.\n\n**Robot (End-Effector) Properties:**\n-   **Hand Shape:** `rectangle` or `circle`. Default: `rectangle`.\n-   **Hand Size:** `(0.3,1)` for `generate_simudata3/4`, `(1,0.3)` for `generate_simudata_2robot2thing`.\n-   **Density:** `0.1`.\n-   **Friction:** `0.1`.\n-   **Force Unit:** `30.0` for rectangle hand, `100.0` for circle hand, used in `apply_wrench` to calculate force from desired velocity.\n-   **Friction Joint (Robot-Base):** `maxForce = 2`, `maxTorque = 2`.\n\n**Task Objective:**\n-   The objective is to minimize the Euclidean distance between the final position of the pushed object(s) (`ret` or `ret1`, `ret2`) and a predefined goal position (`gx, gy` or `gx2, gy2`). For the multi-robot scenario, the sum of distances for multiple objects is minimized.\n\n**Specific Simulation Scenarios and Input Parameters (`sys.argv` arguments):**\n1.  **`generate_simudata3.py` (Single Robot, Single Object):**\n    -   **Inputs:** `rx` (robot initial x), `ry` (robot initial y), `simu_steps` (simulation duration, multiplied by 10), `gx` (goal x), `gy` (goal y).\n    -   **Robot Motion:** The robot pushes with a fixed direction, pointing from its initial location (`rx, ry`) towards the object's initial location, with a speed of 5 units. A small Gaussian noise (mean 0, std dev 0.1) is added to the desired velocity.\n    -   `init_angle` for robot is derived from `arctan(ry/rx)`.\n\n2.  **`generate_simudata4.py` (Single Robot, Single Object with Angle Control):**\n    -   **Inputs:** `rx`, `ry`, `simu_steps` (multiplied by 10), `gx`, `gy`, `init_angle` (robot initial angle).\n    -   **Robot Motion:** The robot's desired linear velocity (`xvel`, `yvel`) is derived from `-rx, -ry` and then normalized and scaled to 10 units. A small Gaussian noise (mean 0, std dev 0.1) is added to the desired velocity.\n\n3.  **`generate_simudata_2robot2thing.py` (Two Robots, Two Objects):**\n    -   **Inputs (18 arguments):** `rx`, `ry`, `xvel`, `yvel`, `simu_steps`, `init_angle` for robot 1, and similarly `rx2`, `ry2`, `xvel2`, `yvel2`, `simu_steps2`, `init_angle2` for robot 2. Additionally, `rtor`, `rtor2` (robot angular velocities/torques), and `gx`, `gy`, `gx2`, `gy2` (goal positions for thing 1 and thing 2).\n    -   **Objects:** One `rectangle` object at `(0, 2)` and one `circle` object at `(0, -2)`.\n    -   **Robot Motion:** Two robots push two separate objects. Each robot applies a wrench based on specified linear velocities (`xvel`, `yvel`) and angular velocities (`rtor`). A small Gaussian noise (mean 0, std dev 0.01) is added to the desired linear velocity for both robots.\n    -   `tmax` is the maximum of `simulation_steps` and `simulation_steps2`, determining overall simulation duration.\n\n**Fidelity Relation to DNN-MFBO:**\nThe `simu_steps` (and `simu_steps2`) parameters in these scripts could be interpreted as fidelity levels for a multi-fidelity optimization task. A higher `simu_steps` value would correspond to a higher-fidelity (more computationally expensive) simulation, providing a more precise evaluation of the objective function, as described in the DNN-MFBO method where different NNs correspond to different fidelities."
+}
