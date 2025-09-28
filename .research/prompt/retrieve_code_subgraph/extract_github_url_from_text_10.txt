@@ -1,0 +1,17 @@
+
+Input:
+# Task
+You carefully read the contents of the “Paper Outline” and select one GitHub link from the “GitHub URLs List” that you think is most relevant to the contents.
+# Constraints
+- Output the index number corresponding to the selected GitHub URL.
+- Be sure to select only one GitHub URL.
+- If there is no related GitHub link, output None.
+# Paper Outline
+PB2 formulates the online hyperparameter selection problem as batch Gaussian Process bandit optimization of a time-varying function. It models the reward function using a Gaussian Process with a time-varying kernel (specifically, a product form of squared exponential and a time kernel, `k_SE ◦ k_time`), which accounts for the non-stationary nature of neural network training. For parallel agents, hyperparameters are selected by sequentially maximizing an acquisition function (`µ_t,1(x) + sqrt(β_t)σ_t,b(x)`), which leverages knowledge of currently training agents to reduce redundancy and explore distinct regions. The algorithm periodically evaluates agents, copies weights from best performers to underperformers, and then uses the fitted GP model to select new hyperparameters for the underperforming agents by maximizing the acquisition function.
+
+# GitHub URLs List
+['https://github.com/jparkerholder/PB2', 'https://github.com/ray-project/rl-experiments']
+Output:
+{
+    "index": 0
+}
