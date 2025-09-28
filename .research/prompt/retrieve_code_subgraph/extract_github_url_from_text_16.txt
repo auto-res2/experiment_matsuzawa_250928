@@ -1,0 +1,17 @@
+
+Input:
+# Task
+You carefully read the contents of the “Paper Outline” and select one GitHub link from the “GitHub URLs List” that you think is most relevant to the contents.
+# Constraints
+- Output the index number corresponding to the selected GitHub URL.
+- Be sure to select only one GitHub URL.
+- If there is no related GitHub link, output None.
+# Paper Outline
+DPL proposes a probabilistic surrogate for Bayesian optimization (BO) based on an ensemble of K diverse deep power law functions. Each ensemble member is a 2-layer feedforward neural network with 128 units per layer, conditioned to map hyperparameter configurations (lambda) to power-law coefficients (alpha, beta, gamma) for predicting validation loss ˆf(lambda, b) = g(lambda)alpha + g(lambda)beta * b^-g(lambda)gamma. The ensemble provides posterior mean and variance for predictions. Expected Improvement (EI) is used as the acquisition function to select the next promising hyperparameter configuration. A multi-fidelity strategy then advances the selected configuration by a small budget (bstep, e.g., one epoch) rather than training until full convergence, allowing for dynamic pausing and incremental training of configurations.
+
+# GitHub URLs List
+['https://github.com/releaunifreiburg/DPL', 'https://github.com/karpathy/nanoGPT', 'https://github.com/automl/LCBench', 'https://github.com/automl/HpBandSter', 'https://github.com/automl/DEHB', 'https://github.com/shib0li/DNN-MFBO', 'https://github.com/automl/SMAC3']
+Output:
+{
+    "index": 0
+}
